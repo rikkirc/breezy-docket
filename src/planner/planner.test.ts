@@ -1,0 +1,168 @@
+// The five acceptance tests from SPEC.md, plus a few sanity checks.
+import { describe, expect, test } from 'vitest'
+import curriculumJson from '../../data/jd-curriculum.json'
+import demoJson from '../../data/demo-student.json'
+import { capFor, planCurriculum, termIndex, type Curriculum, type Plan, type StudentData } from '.'
+import { planNaive } from './naive'
+
+const curriculum = curriculumJson as Curriculum
+const demo = demoJson as StudentData
+
+/** A new student with nothing taken yet and the same cap every term. */
+function freshStudent(cap: number): StudentData {
+  return { unit_caps: { default: cap }, next_term: { year: 1, sem: 1 }, results: [] }
+}
+
+/** Returns every broken planning rule, so a failure names the subject and term. */
+function ruleViolations(plan: Plan, student: StudentData): string[] {
+  const subjects = new Map(curriculum.subjects.map((s) => [s.code, s]))
+  const doneBy = new Map<string, number>()
+  for (const r of student.results) {
+    for (const a of r.attempts) {
+      if (a.result !== 'Failed') doneBy.set(r.code, Math.min(termIndex(a), doneBy.get(r.code) ?? Infinity))
+    }
+  }
+  for (const t of plan.terms) for (const s of t.subjects) doneBy.set(s.code, termIndex(t.term))
+
+  const problems: string[] = []
+  for (const t of plan.terms) {
+    const units = t.subjects.reduce((n, s) => n + s.units, 0)
+    if (units > capFor(student, t.term)) problems.push(`${t.label}: ${units} units over the cap`)
+    if (units !== t.units) problems.push(`${t.label}: reports ${t.units} units but has ${units}`)
+    for (const planned of t.subjects) {
+      const s = subjects.get(planned.code)!
+      if (s.offered_sem !== t.term.sem) problems.push(`${s.code} in ${t.label}, the wrong semester`)
+      for (const p of s.prerequisites) {
+        if (!((doneBy.get(p) ?? Infinity) < termIndex(t.term))) {
+          problems.push(`${s.code} in ${t.label} before its prerequisite ${p}`)
+        }
+      }
+    }
+  }
+  const planned = plan.terms.flatMap((t) => t.subjects.map((s) => s.code))
+  if (new Set(planned).size !== planned.length) problems.push('a subject is planned twice')
+  return problems
+}
+
+describe('acceptance tests (SPEC.md)', () => {
+  test('1. standard student: nothing failed, cap 21, graduates Year 4, 2nd sem', () => {
+    const plan = planCurriculum(curriculum, freshStudent(21))
+    expect(plan.unplanned).toEqual([])
+    expect(plan.graduation).toEqual({ year: 4, sem: 2 })
+    expect(plan.termsBehind).toBe(0)
+  })
+
+  test('2. demo student: failed 214, cap 12 from Year 3, graduates Year 5, 2nd sem with full 1st sems', () => {
+    const plan = planCurriculum(curriculum, demo)
+    expect(plan.graduation).toEqual({ year: 5, sem: 2 })
+    expect(plan.termsBehind).toBe(2)
+
+    const firstSems = plan.terms.filter((t) => t.term.sem === 1)
+    expect(firstSems.map((t) => t.label)).toEqual([
+      'Year 3, 1st sem',
+      'Year 4, 1st sem',
+      'Year 5, 1st sem',
+    ])
+    for (const t of firstSems) expect(t.units, t.label).toBe(12)
+  })
+
+  test('3. regression: the planner beats the simple standard-order fill (Year 6, 2nd sem)', () => {
+    const naive = planNaive(curriculum, demo)
+    expect(naive.graduation).toEqual({ year: 6, sem: 2 })
+
+    const plan = planCurriculum(curriculum, demo)
+    expect(termIndex(plan.graduation!)).toBeLessThan(termIndex(naive.graduation!))
+  })
+
+  describe('4. rules hold in every plan', () => {
+    const failed = (code: string, year: number, sem: number) => ({
+      code,
+      attempts: [{ year, sem, result: 'Failed' as const }],
+    })
+    const cases: [string, StudentData][] = [
+      ['standard, cap 21', freshStudent(21)],
+      ['fresh, cap 12', freshStudent(12)],
+      ['fresh, cap 9', freshStudent(9)],
+      ['fresh, cap 15', freshStudent(15)],
+      ['demo student', demo],
+      ['demo student, cap 15', { ...demo, unit_caps: { ...demo.unit_caps, default: 15 } }],
+      [
+        'demo student, also failed Evidence (212) and Sales (216)',
+        {
+          ...demo,
+          results: [
+            ...demo.results.filter((r) => r.code !== '212' && r.code !== '216'),
+            failed('212', 2, 2),
+            failed('216', 2, 2),
+          ],
+        },
+      ],
+    ]
+
+    test.each(cases)('%s', (_, student) => {
+      const plan = planCurriculum(curriculum, student)
+      expect(plan.unplanned).toEqual([])
+      expect(ruleViolations(plan, student)).toEqual([])
+    })
+
+    test('the naive fill obeys the rules too (it is only slower)', () => {
+      expect(ruleViolations(planNaive(curriculum, demo), demo)).toEqual([])
+    })
+  })
+
+  test('5. delay reasons: Commercial Laws I (305) waits because 214 is not passed yet', () => {
+    const plan = planCurriculum(curriculum, demo)
+    const delay = plan.delays.find((d) => d.code === '305')
+    expect(delay?.standardTerm).toEqual({ year: 3, sem: 1 })
+    expect(delay?.plannedTerm).toEqual({ year: 4, sem: 1 })
+    expect(delay?.reasons).toContainEqual({
+      kind: 'prerequisite',
+      term: { year: 3, sem: 1 },
+      missing: ['214'],
+    })
+  })
+})
+
+describe('planner details', () => {
+  test('every remaining subject is planned exactly once', () => {
+    const plan = planCurriculum(curriculum, demo)
+    const passed = demo.results.filter((r) => r.attempts.some((a) => a.result === 'Passed'))
+    const planned = plan.terms.flatMap((t) => t.subjects)
+    expect(planned.length + passed.length).toBe(curriculum.subjects.length)
+    expect(planned.reduce((n, s) => n + s.units, 0)).toBe(71)
+  })
+
+  test('the failed subject itself is delayed because it was failed', () => {
+    const delay = planCurriculum(curriculum, demo).delays.find((d) => d.code === '214')
+    expect(delay?.plannedTerm).toEqual({ year: 3, sem: 1 })
+    expect(delay?.reasons).toContainEqual({ kind: 'failed', term: { year: 2, sem: 1 } })
+  })
+
+  test('Ongoing counts as passed for planning, with a warning on what depends on it', () => {
+    const student: StudentData = {
+      ...demo,
+      results: [
+        ...demo.results.filter((r) => r.code !== '214'),
+        { code: '214', attempts: [{ year: 3, sem: 1, result: 'Ongoing' }] },
+      ],
+      next_term: { year: 3, sem: 2 },
+    }
+    const plan = planCurriculum(curriculum, student)
+    expect(plan.ongoing).toEqual(['214'])
+    const commercial2 = plan.terms.flatMap((t) => t.subjects).find((s) => s.code === '315')
+    expect(commercial2?.warnings).toEqual(['Assumes 214 (still Ongoing) will be passed.'])
+    expect(plan.terms[0].subjects.map((s) => s.code)).toContain('315')
+  })
+
+  test('a cap too small for a subject leaves it unplanned instead of looping forever', () => {
+    const plan = planCurriculum(curriculum, freshStudent(4))
+    expect(plan.graduation).toBeNull()
+    expect(plan.unplanned).toContain('111')
+  })
+
+  test('the inputs are not changed', () => {
+    const before = JSON.stringify(demo)
+    planCurriculum(curriculum, demo)
+    expect(JSON.stringify(demo)).toBe(before)
+  })
+})
