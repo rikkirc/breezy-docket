@@ -24,3 +24,9 @@ export function termKey(term: Term): string {
 export function termLabel(term: Term): string {
   return `Year ${term.year}, ${term.sem === 1 ? '1st' : '2nd'} sem`
 }
+
+/** The reverse of termKey: "Y3-1" → { year: 3, sem: 1 }, or null if it isn't a term key. */
+export function parseTermKey(key: string): Term | null {
+  const match = /^Y(\d+)-([12])$/.exec(key)
+  return match ? { year: Number(match[1]), sem: Number(match[2]) } : null
+}

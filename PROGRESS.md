@@ -2,13 +2,22 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-15) — Milestone 1: planner + tests
+## Current state (2026-10-15) — Milestone 2: screens + live deploy
 
-- **Stack:** React + Vite + TypeScript, Vitest. No screens yet (a placeholder page only).
-- **Planner:** `src/planner/`, a pure module: takes the curriculum and the student's results, returns the plan by term, graduation term, terms behind the standard plan, and delay reasons.
-- **Tests:** the 5 acceptance tests from SPEC.md pass, plus rule checks on 7 different students and a few edge cases (17 tests). CI runs lint, type check, tests and build on every push.
+- **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
+- **Screens:** Plan (graduation date, terms with − / + unit cap, delay reasons), Results (Passed / Failed / Ongoing per subject, retakes as extra attempts), Settings (plan-from term, default cap, start fresh / demo).
+- **Data:** stays in the browser (localStorage). Opens on the made-up demo student until you start fresh.
+- **Tests:** 30 — the 5 planner acceptance tests and 12 planner checks, 8 for data edits and wording, 5 that drive the screens (jsdom). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-15 (evening) — Milestone 2
+- Screens: Plan, Results and Settings, built for phone first; light and dark mode follow the phone's setting.
+- Plan: earliest graduation and the gap to Year 4, 2nd sem; each term with its units and a − / + cap; delayed subjects say why in plain words ("Needs 214 Corporation and Basic Securities Law passed first…").
+- Results: tap a subject to record Passed / Failed / Ongoing and the term; retakes default to the next time the subject runs; "Mark the rest passed" per semester for quick entry; subjects flagged `check` show their note.
+- If the results go past the plan's start term, the Plan offers to start from the next one.
+- Saved in localStorage; nothing leaves the device.
+- GitHub Pages deploy workflow (`deploy.yml`).
 
 ### 2026-10-15
 - Set up the React + Vite + TypeScript project and moved the JSON files into `data/`, where SPEC.md expects them.
@@ -23,12 +32,13 @@ What's done, what's next, and what's blocked. Newest entries first.
 ## Next
 
 ### Milestone 2 — screens
-- [ ] Results entry: mark each subject Passed / Failed / Ongoing and the term taken.
-- [ ] Unit cap per term (default 12).
-- [ ] Plan by term, with the graduation date and how far it is from Year 4, 2nd sem.
-- [ ] Delay reasons for each delayed subject.
-- [ ] Save to localStorage (data stays on the device).
-- [ ] GitHub Pages deploy from `main`, so every merge gives a link to open on a phone.
+- [x] Results entry: mark each subject Passed / Failed / Ongoing and the term taken.
+- [x] Unit cap per term (default 12).
+- [x] Plan by term, with the graduation date and how far it is from Year 4, 2nd sem.
+- [x] Delay reasons for each delayed subject.
+- [x] Save to localStorage (data stays on the device).
+- [x] GitHub Pages deploy from `main`, so every merge gives a link to open on a phone.
+- [ ] Try it on a real phone after the first deploy.
 
 ### Milestone 3
 - [ ] What-if ("fail X this sem", "take 15 units") without saving.
