@@ -1,0 +1,298 @@
+{
+  "student": {
+    "name": "Juan dela Cruz (demo)",
+    "program": "Juris Doctor (JD)"
+  },
+  "unit_caps": {
+    "default": 12,
+    "by_term": {
+      "Y1-1": 21,
+      "Y1-2": 21,
+      "Y2-1": 21,
+      "Y2-2": 21
+    }
+  },
+  "next_term": {
+    "year": 3,
+    "sem": 1
+  },
+  "results": [
+    {
+      "code": "101",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "102",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "103",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "104",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "105",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "106",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "111",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "112",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "113.1",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "114",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "115",
+      "attempts": [
+        {
+          "year": 1,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "201",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "202",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "203",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "214",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Failed"
+        }
+      ]
+    },
+    {
+      "code": "205",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "207",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "208",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "209",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 1,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "211",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "212",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "213",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "204",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "215",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "216",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "217",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    },
+    {
+      "code": "206",
+      "attempts": [
+        {
+          "year": 2,
+          "sem": 2,
+          "result": "Passed"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "graduation": {
+      "year": 5,
+      "sem": 2
+    },
+    "note": "Acceptance test 2 in SPEC.md"
+  }
+}

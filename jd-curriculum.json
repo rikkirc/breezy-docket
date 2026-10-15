@@ -1,0 +1,543 @@
+{
+  "program": {
+    "name": "Juris Doctor (JD)",
+    "school": "[your law school]",
+    "terms_per_year": 2,
+    "term_names": [
+      "1st sem",
+      "2nd sem"
+    ],
+    "note": "Standard plan: years 1-4. 'offered_sem' is the only semester a subject runs. Prerequisites are subject codes and must be passed (not just taken)."
+  },
+  "subjects": [
+    {
+      "code": "101",
+      "title": "Persons and Family Law",
+      "units": 4,
+      "standard_year": 1,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "102",
+      "title": "Constitutional Law I",
+      "units": 4,
+      "standard_year": 1,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "103",
+      "title": "Criminal Law I",
+      "units": 3,
+      "standard_year": 1,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "104",
+      "title": "Philosophy of Law",
+      "units": 2,
+      "standard_year": 1,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "105",
+      "title": "Criminal Procedure",
+      "units": 3,
+      "standard_year": 1,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "106",
+      "title": "Statutory Construction",
+      "units": 2,
+      "standard_year": 1,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "111",
+      "title": "Obligations and Contracts",
+      "units": 5,
+      "standard_year": 1,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "112",
+      "title": "Constitutional Law II",
+      "units": 3,
+      "standard_year": 1,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "113.1",
+      "title": "Criminal Law II",
+      "units": 3,
+      "standard_year": 1,
+      "offered_sem": 2,
+      "prerequisites": [
+        "103"
+      ]
+    },
+    {
+      "code": "114",
+      "title": "Legal Research and Writing",
+      "units": 2,
+      "standard_year": 1,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "115",
+      "title": "Civil Procedure I",
+      "units": 3,
+      "standard_year": 1,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "201",
+      "title": "Property",
+      "units": 4,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "202",
+      "title": "Basic Legal and Judicial Ethics",
+      "units": 3,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "203",
+      "title": "Civil Procedure II",
+      "units": 3,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": [
+        "115"
+      ]
+    },
+    {
+      "code": "214",
+      "title": "Corporation and Basic Securities Law",
+      "units": 3,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": [
+        "111"
+      ],
+      "check": "Code suggests 2nd sem, but you took it in 1st sem twice (Y2 and Y3). Confirm it's only offered in 1st sem."
+    },
+    {
+      "code": "205",
+      "title": "Labor Law I & Social Legislation",
+      "units": 3,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": [
+        "112"
+      ]
+    },
+    {
+      "code": "207",
+      "title": "Basic Taxation Law I",
+      "units": 2,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": [
+        "102"
+      ]
+    },
+    {
+      "code": "208",
+      "title": "Clinical Legal Education I",
+      "units": 1,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "209",
+      "title": "Special Penal Laws",
+      "units": 2,
+      "standard_year": 2,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "211",
+      "title": "Public International Law",
+      "units": 3,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": [
+        "102"
+      ]
+    },
+    {
+      "code": "212",
+      "title": "Evidence",
+      "units": 3,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": [
+        "105",
+        "115",
+        "203"
+      ]
+    },
+    {
+      "code": "213",
+      "title": "Land Titles and Deeds",
+      "units": 2,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "204",
+      "title": "Administrative Law & Law on Public Officers",
+      "units": 2,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": [
+        "102"
+      ],
+      "check": "Code suggests 1st sem, but your plan has it in 2nd sem. Confirm."
+    },
+    {
+      "code": "215",
+      "title": "Labor Law II (Labor Relations)",
+      "units": 3,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": [
+        "205"
+      ]
+    },
+    {
+      "code": "216",
+      "title": "Sales",
+      "units": 2,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": [
+        "111"
+      ]
+    },
+    {
+      "code": "217",
+      "title": "Basic Taxation Law II",
+      "units": 2,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": [
+        "207"
+      ]
+    },
+    {
+      "code": "206",
+      "title": "Agency, Trust & Partnership",
+      "units": 2,
+      "standard_year": 2,
+      "offered_sem": 2,
+      "prerequisites": [
+        "111"
+      ],
+      "check": "Code suggests 1st sem, but your plan has it in 2nd sem. Confirm."
+    },
+    {
+      "code": "301",
+      "title": "Laws on Local Governments",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": [
+        "102"
+      ]
+    },
+    {
+      "code": "302",
+      "title": "Medical Jurisprudence",
+      "units": 1,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": [
+        "212"
+      ]
+    },
+    {
+      "code": "303",
+      "title": "Practice Court",
+      "units": 3,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "304",
+      "title": "Basic Succession Law",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": [
+        "101"
+      ]
+    },
+    {
+      "code": "305",
+      "title": "Commercial Laws I",
+      "units": 3,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": [
+        "111",
+        "214"
+      ]
+    },
+    {
+      "code": "306",
+      "title": "Legal Forms",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "307",
+      "title": "Environmental & Natural Resources Law",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "308",
+      "title": "Clinical Legal Education II",
+      "units": 1,
+      "standard_year": 3,
+      "offered_sem": 1,
+      "prerequisites": []
+    },
+    {
+      "code": "311",
+      "title": "Election Laws",
+      "units": 1,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": [
+        "102"
+      ]
+    },
+    {
+      "code": "312",
+      "title": "Private International Law",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": [
+        "101",
+        "111",
+        "216",
+        "201",
+        "213",
+        "304",
+        "206",
+        "214",
+        "305",
+        "205",
+        "207",
+        "217"
+      ],
+      "check": "Long prerequisite list copied from your tracker, including 305 (Commercial Laws I). Confirm against the official curriculum."
+    },
+    {
+      "code": "313",
+      "title": "Torts and Damages",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": [
+        "111"
+      ]
+    },
+    {
+      "code": "314",
+      "title": "Special Rules and Proceedings",
+      "units": 3,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": [
+        "304"
+      ]
+    },
+    {
+      "code": "315",
+      "title": "Commercial Laws II",
+      "units": 4,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": [
+        "111",
+        "214"
+      ],
+      "check": "Your tracker marks it 'Conditional: if Corpo is passed'. Modelled as a normal prerequisite on 214."
+    },
+    {
+      "code": "316",
+      "title": "Gender Sensitivity & Laws on Women",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "317",
+      "title": "Alternative Dispute Resolution",
+      "units": 2,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "318",
+      "title": "Legal Counseling",
+      "units": 1,
+      "standard_year": 3,
+      "offered_sem": 2,
+      "prerequisites": []
+    },
+    {
+      "code": "401.1",
+      "title": "Civil Law Review and Integration I",
+      "units": 3,
+      "standard_year": 4,
+      "offered_sem": 1,
+      "prerequisites": [
+        "111",
+        "216",
+        "313"
+      ]
+    },
+    {
+      "code": "402",
+      "title": "Political and International Law Review & Integration",
+      "units": 5,
+      "standard_year": 4,
+      "offered_sem": 1,
+      "prerequisites": [
+        "102",
+        "112",
+        "204",
+        "311",
+        "301",
+        "211"
+      ]
+    },
+    {
+      "code": "403",
+      "title": "Criminal Law Review and Integration",
+      "units": 3,
+      "standard_year": 4,
+      "offered_sem": 1,
+      "prerequisites": [
+        "103",
+        "113.1"
+      ]
+    },
+    {
+      "code": "412.1",
+      "title": "Remedial Law Review and Integration I",
+      "units": 3,
+      "standard_year": 4,
+      "offered_sem": 1,
+      "prerequisites": [
+        "105",
+        "314"
+      ]
+    },
+    {
+      "code": "414",
+      "title": "Taxation Law Review and Integration",
+      "units": 3,
+      "standard_year": 4,
+      "offered_sem": 1,
+      "prerequisites": [
+        "207",
+        "217"
+      ],
+      "check": "Code suggests 2nd sem, but your plan has it in 1st sem. Confirm."
+    },
+    {
+      "code": "401.2",
+      "title": "Civil Law Review and Integration II",
+      "units": 4,
+      "standard_year": 4,
+      "offered_sem": 2,
+      "prerequisites": [
+        "101",
+        "201",
+        "213",
+        "304",
+        "312"
+      ]
+    },
+    {
+      "code": "404",
+      "title": "Labor Law Review and Integration",
+      "units": 3,
+      "standard_year": 4,
+      "offered_sem": 2,
+      "prerequisites": [
+        "205",
+        "215"
+      ],
+      "check": "Code suggests 1st sem, but your plan has it in 2nd sem. Confirm."
+    },
+    {
+      "code": "411",
+      "title": "Legal and Judicial Ethics & Practical Exercises Review",
+      "units": 2,
+      "standard_year": 4,
+      "offered_sem": 2,
+      "prerequisites": [
+        "202",
+        "306"
+      ]
+    },
+    {
+      "code": "412.2",
+      "title": "Remedial Law Review and Integration II",
+      "units": 4,
+      "standard_year": 4,
+      "offered_sem": 2,
+      "prerequisites": [
+        "115",
+        "203",
+        "212"
+      ]
+    },
+    {
+      "code": "413",
+      "title": "Commercial Law Review and Integration",
+      "units": 5,
+      "standard_year": 4,
+      "offered_sem": 2,
+      "prerequisites": [
+        "305",
+        "315",
+        "206",
+        "214"
+      ]
+    }
+  ]
+}
