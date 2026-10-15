@@ -1,18 +1,22 @@
 import { useRef, useState } from 'react'
-import { demoStudent } from '../data'
+import { jdCurriculum } from '../data'
 import { backupFileName, makeBackup, parseBackup } from '../lib/backup'
 import { isInstalled, useInstallPrompt } from '../lib/useInstallPrompt'
+import { emptyCurriculum } from '../lib/curriculum'
+import { demoSaved, type Saved } from '../lib/storage'
 import { freshStudent, termAfterResults } from '../lib/student'
-import { parseTermKey, termIndex, termLabel, type StudentData } from '../planner'
+import { parseTermKey, termIndex, termLabel, type Curriculum, type StudentData } from '../planner'
 
 interface Props {
   student: StudentData
   isDemo: boolean
   onChange: (student: StudentData) => void
-  onReset: (student: StudentData, isDemo: boolean, show?: 'plan' | 'results') => void
+  curriculum: Curriculum
+  /** Replaces everything (curriculum, results, settings), then shows the given tab. */
+  onReplace: (saved: Saved, show?: 'plan' | 'results') => void
 }
 
-export function SettingsView({ student, isDemo, onChange, onReset }: Props) {
+export function SettingsView({ curriculum, student, isDemo, onChange, onReplace }: Props) {
   // Caps for semesters already taken no longer affect the plan, so only future ones are listed.
   const overrides = Object.entries(student.unit_caps.by_term ?? {}).filter(([key]) => {
     const term = parseTermKey(key)
@@ -24,7 +28,7 @@ export function SettingsView({ student, isDemo, onChange, onReset }: Props) {
   const install = useInstallPrompt()
 
   const exportBackup = () => {
-    const blob = new Blob([JSON.stringify(makeBackup(student), null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(makeBackup(curriculum, student), null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -38,7 +42,11 @@ export function SettingsView({ student, isDemo, onChange, onReset }: Props) {
       const imported = parseBackup(await file.text())
       if (!window.confirm('Replace the data in this browser with the backup?')) return
       setImportError(null)
-      onReset(imported, false, 'plan')
+      // Version 1 backups were made with the JD curriculum, the only one the app had then.
+      onReplace(
+        { curriculum: imported.curriculum ?? jdCurriculum, student: imported.student, isDemo: false, setupDone: true },
+        'plan',
+      )
     } catch (error) {
       setImportError(error instanceof Error ? error.message : String(error))
     }
@@ -175,19 +183,36 @@ export function SettingsView({ student, isDemo, onChange, onReset }: Props) {
             className="danger"
             onClick={() => {
               const message = isDemo
-                ? 'Start your own plan? The demo student will be cleared.'
-                : 'Clear all your results and start over? This cannot be undone.'
-              if (window.confirm(message)) onReset(freshStudent(), false)
+                ? "Clear the demo student's results and record your own? The JD curriculum is kept."
+                : 'Clear all your results? Your curriculum is kept. This cannot be undone.'
+              if (window.confirm(message)) {
+                const fresh = freshStudent()
+                onReplace(
+                  { curriculum, student: { ...fresh, unit_caps: { default: student.unit_caps.default } }, isDemo: false, setupDone: true },
+                  'results',
+                )
+              }
             }}
           >
-            Start fresh
+            Clear my results
+          </button>
+          <button
+            type="button"
+            className="danger"
+            onClick={() => {
+              if (window.confirm('Start over with an empty curriculum? Your subjects and results will be deleted.')) {
+                onReplace({ curriculum: emptyCurriculum(), student: freshStudent(), isDemo: false, setupDone: false })
+              }
+            }}
+          >
+            Start over
           </button>
           {!isDemo && (
             <button
               type="button"
               onClick={() => {
-                if (window.confirm('Replace your data with the demo student? Your results will be lost.')) {
-                  onReset(demoStudent, true)
+                if (window.confirm('Replace your data with the demo student? Your curriculum and results will be lost.')) {
+                  onReplace(demoSaved(), 'plan')
                 }
               }}
             >

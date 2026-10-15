@@ -1,24 +1,36 @@
 import { useMemo, useState } from 'react'
-import { curriculum, subjectsByCode } from '../data'
-import { describeDelay, describeGap, setCap, termAfterResults } from '../lib/student'
+import { subjectMap } from '../data'
+import { formatUnits } from '../lib/curriculum'
+import {
+  describeDelay,
+  describeGap,
+  dropOngoing,
+  finishOngoing,
+  setCap,
+  startTerm,
+  termAfterResults,
+} from '../lib/student'
 import { capFromNow, failThisSem, thisSemSubjects } from '../lib/whatIf'
 import {
   planCurriculum,
   termFromIndex,
   termIndex,
   termLabel,
+  type Curriculum,
   type Plan,
   type StudentData,
   type Term,
 } from '../planner'
 
 interface Props {
+  curriculum: Curriculum
   plan: Plan
   student: StudentData
   onChange: (student: StudentData) => void
 }
 
-export function PlanView({ plan: realPlan, student, onChange }: Props) {
+export function PlanView({ curriculum, plan: realPlan, student, onChange }: Props) {
+  const subjectsByCode = useMemo(() => subjectMap(curriculum), [curriculum])
   const [failCode, setFailCode] = useState('')
   const [whatIfCap, setWhatIfCap] = useState<number | null>(null)
   const thisSem = thisSemSubjects(student, realPlan)
@@ -32,7 +44,7 @@ export function PlanView({ plan: realPlan, student, onChange }: Props) {
     if (fail) edited = failThisSem(edited, realPlan, fail)
     if (whatIfCap !== null) edited = capFromNow(edited, whatIfCap)
     return planCurriculum(curriculum, edited)
-  }, [whatIf, fail, whatIfCap, student, realPlan])
+  }, [whatIf, fail, whatIfCap, student, realPlan, curriculum])
   const plan = whatIfPlan ?? realPlan
 
   const delays = new Map(plan.delays.map((d) => [d.code, d]))
@@ -105,11 +117,40 @@ export function PlanView({ plan: realPlan, student, onChange }: Props) {
         </p>
       )}
 
-      {plan.ongoing.length > 0 && (
-        <p className="notice">
-          Ongoing ({plan.ongoing.join(', ')}) is counted as passed. If you fail it, the plan will
-          change.
-        </p>
+      {!whatIf && realPlan.ongoing.length > 0 && (
+        <div className="card term taking">
+          <div className="term-head">
+            <h3>Taking now{thisSem.term ? ` · ${termLabel(thisSem.term)}` : ''}</h3>
+          </div>
+          <p className="muted small-text">
+            Counted as passed in the plan below. Mark each one when you get your grade.
+          </p>
+          <ul className="subjects">
+            {realPlan.ongoing.map((code) => {
+              const subject = subjectsByCode.get(code)
+              return (
+                <li key={code} className="subject">
+                  <div className="subject-line">
+                    <span className="code">{code}</span>{' '}
+                    <span className="title">{subject?.title ?? code}</span>
+                    <span className="units">{subject ? formatUnits(subject.units) : ''}</span>
+                  </div>
+                  <div className="row finish" role="group" aria-label={`Result for ${code}`}>
+                    <button type="button" className="small" onClick={() => onChange(finishOngoing(student, code, 'Passed'))}>
+                      Passed
+                    </button>
+                    <button type="button" className="small" onClick={() => onChange(finishOngoing(student, code, 'Failed'))}>
+                      Failed
+                    </button>
+                    <button type="button" className="small danger" onClick={() => onChange(dropOngoing(student, code))}>
+                      Not taking it
+                    </button>
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       )}
 
       {plan.terms.length === 0 && plan.unplanned.length === 0 && (
@@ -117,7 +158,7 @@ export function PlanView({ plan: realPlan, student, onChange }: Props) {
       )}
 
       <ol className="terms">
-        {plan.terms.map((t) => (
+        {plan.terms.map((t, i) => (
           <li key={termIndex(t.term)} className="card term">
             <div className="term-head">
               <h3>{t.label}</h3>
@@ -140,9 +181,9 @@ export function PlanView({ plan: realPlan, student, onChange }: Props) {
                 return (
                   <li key={s.code} className="subject">
                     <div className="subject-line">
-                      <span className="code">{s.code}</span>
+                      <span className="code">{s.code}</span>{' '}
                       <span className="title">{s.title}</span>
-                      <span className="units">{s.units} u</span>
+                      <span className="units">{formatUnits(s.units)}</span>
                     </div>
                     {delay ? (
                       <div className="delay">
@@ -165,6 +206,19 @@ export function PlanView({ plan: realPlan, student, onChange }: Props) {
                 )
               })}
             </ul>
+            {!whatIf && i === 0 && termIndex(t.term) === termIndex(student.next_term) && (
+              <div className="row start-term">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onChange(startTerm(student, t.term, t.subjects.map((s) => s.code)))
+                  }
+                >
+                  I'm taking these now
+                </button>
+                <span className="muted small-text">Taking something else? Record it on Results.</span>
+              </div>
+            )}
           </li>
         ))}
       </ol>
@@ -197,15 +251,16 @@ function Graduation({ plan, whatIf }: { plan: Plan; whatIf: boolean }) {
     )
   }
   const behind = plan.termsBehind ?? 0
+  const standard = plan.standardGraduation ? termLabel(plan.standardGraduation) : ''
   return (
     <div className={`card summary ${behind > 0 ? 'summary-late' : 'summary-ok'}`}>
       <p className="summary-label">{whatIf ? 'What-if graduation' : 'Earliest graduation'}</p>
       <p className="summary-term">{termLabel(plan.graduation)}</p>
       <p>
         {behind > 0
-          ? `${describeGap(behind)} behind the standard plan (${termLabel(plan.standardGraduation)}).`
+          ? `${describeGap(behind)} behind the standard plan (${standard}).`
           : behind < 0
-            ? `${describeGap(-behind)} ahead of the standard plan (${termLabel(plan.standardGraduation)}).`
+            ? `${describeGap(-behind)} ahead of the standard plan (${standard}).`
             : `On schedule with the standard plan.`}
       </p>
     </div>

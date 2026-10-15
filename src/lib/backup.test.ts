@@ -1,19 +1,34 @@
 import { describe, expect, test } from 'vitest'
-import { demoStudent } from '../data'
+import { demoStudent, jdCurriculum } from '../data'
+import { emptyCurriculum } from './curriculum'
 import { backupFileName, makeBackup, parseBackup, studentProblem } from './backup'
 
 describe('backup', () => {
-  test('export then import gives back the same data', () => {
-    const text = JSON.stringify(makeBackup(demoStudent, new Date('2026-10-15T08:00:00Z')))
-    expect(JSON.parse(text)).toMatchObject({ app: 'curriculum-organizer', version: 1 })
+  test('export then import gives back the same curriculum and data', () => {
+    const text = JSON.stringify(makeBackup(jdCurriculum, demoStudent, new Date('2026-10-15T08:00:00Z')))
+    expect(JSON.parse(text)).toMatchObject({ app: 'curriculum-organizer', version: 2 })
     const { student, unit_caps, next_term, results } = demoStudent
-    expect(parseBackup(text)).toEqual({ student, unit_caps, next_term, results })
+    const imported = parseBackup(text)
+    expect(imported.student).toEqual({ student, unit_caps, next_term, results })
+    expect(imported.curriculum?.subjects).toEqual(jdCurriculum.subjects)
+  })
+
+  test('a version 1 backup (no curriculum) still imports', () => {
+    const v1 = { app: 'curriculum-organizer', version: 1, exported_at: '2026-10-15T08:00:00Z', student: demoStudent }
+    const imported = parseBackup(JSON.stringify(v1))
+    expect(imported.curriculum).toBeUndefined()
+    expect(imported.student.results).toHaveLength(demoStudent.results.length)
+  })
+
+  test('a broken curriculum is refused', () => {
+    const backup = makeBackup({ ...emptyCurriculum(), subjects: [{ code: 'A', title: 'A', units: 0, standard_year: 1, offered_sem: 1, prerequisites: [] }] }, demoStudent)
+    expect(() => parseBackup(JSON.stringify(backup))).toThrow(/subject A has invalid units/)
   })
 
   test('accepts bare student data like data/demo-student.json, dropping unknown fields', () => {
     const imported = parseBackup(JSON.stringify(demoStudent))
-    expect(imported.results).toHaveLength(demoStudent.results.length)
-    expect('expected' in imported).toBe(false)
+    expect(imported.student.results).toHaveLength(demoStudent.results.length)
+    expect('expected' in imported.student).toBe(false)
   })
 
   test('file name carries the date', () => {

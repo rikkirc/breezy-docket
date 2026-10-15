@@ -501,3 +501,249 @@ button.link {
 .form .notice {
   margin: 0;
 }
+
+/* Buttons */
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+/* Setup steps */
+
+.steps {
+  list-style: none;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 0 0 1.25rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.steps li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px solid var(--border);
+}
+
+.steps li[aria-current='step'] {
+  color: var(--accent);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.steps li.done {
+  border-bottom-color: var(--accent);
+}
+
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  font-size: 0.75rem;
+  flex: none;
+}
+
+.wizard-nav {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 1rem -1rem 0;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.intro p {
+  margin: 0 0 0.75rem;
+}
+
+.cap-setting input {
+  width: 6rem;
+}
+
+/* Subject forms */
+
+.subject-form {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+}
+
+.subject-form label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.subject-form input,
+.subject-form select {
+  width: 100%;
+  font-weight: 400;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.form-row .field-units {
+  max-width: 7rem;
+}
+
+button.add {
+  margin-top: 0.5rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+button.add-year {
+  width: 100%;
+  margin-top: 1rem;
+  border-style: dashed;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Prerequisites */
+
+.needs {
+  margin: 0 0 0 3.9rem;
+  color: var(--muted);
+}
+
+.subject-toggle:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.checklist {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 0.5rem 0 0;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.checklist legend {
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+
+.checklist-term {
+  margin: 0 0 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: auto 3.4rem 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.45rem 0;
+}
+
+.check input {
+  width: 1.2rem;
+  height: 1.2rem;
+  min-height: 0;
+  margin: 0.15rem 0 0;
+  accent-color: var(--accent);
+}
+
+.review .summary {
+  margin-top: 1rem;
+}
+
+.checklist button {
+  justify-self: start;
+}
+
+.problems p {
+  margin: 0 0 0.35rem;
+}
+
+.problems ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.problems {
+  margin-top: 1rem;
+}
+
+/* Curriculum tab */
+
+.segmented {
+  display: flex;
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.segmented button {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  font-size: 0.9rem;
+  padding: 0.4rem;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--border);
+}
+
+.segmented button[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+section > .error {
+  margin-top: 1rem;
+}
+
+/* Taking now */
+
+.taking {
+  border-color: var(--accent);
+}
+
+.taking > p {
+  margin: 0 0 0.5rem;
+}
+
+.finish {
+  margin: 0.4rem 0 0 3.9rem;
+}
+
+.start-term {
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+@media (min-width: 600px) {
+  .needs,
+  .finish {
+    margin-left: 4.5rem;
+  }
+}

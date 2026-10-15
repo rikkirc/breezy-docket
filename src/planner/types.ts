@@ -16,8 +16,9 @@ export interface Subject {
 export interface Curriculum {
   program: {
     name: string
-    terms_per_year: number
-    term_names: string[]
+    terms_per_year?: number
+    term_names?: string[]
+    note?: string
   }
   subjects: Subject[]
 }
@@ -84,7 +85,8 @@ export interface Plan {
   terms: PlannedTerm[]
   /** The last planned term, or null if some subjects can never be planned. */
   graduation: Term | null
-  standardGraduation: Term
+  /** The last term of the standard plan, or null for an empty curriculum. */
+  standardGraduation: Term | null
   /** How many terms after the standard plan's end the student graduates (0 = on time). */
   termsBehind: number | null
   delays: Delay[]

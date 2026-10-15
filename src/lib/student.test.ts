@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest'
-import { demoStudent, subjectsByCode, curriculum } from '../data'
+import { demoStudent, jdCurriculum as curriculum, subjectMap } from '../data'
+
+const subjectsByCode = subjectMap(curriculum)
 import { planCurriculum } from '../planner'
 import {
   defaultAttemptTerm,

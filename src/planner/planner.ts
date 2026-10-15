@@ -10,8 +10,15 @@ import type {
   Term,
 } from './types'
 
-/** The standard plan ends in Year 4, 2nd sem. */
-export const STANDARD_GRADUATION: Term = { year: 4, sem: 2 }
+/** The last term of the standard plan: the latest standard term of any subject (Year 4, 2nd sem for the JD). */
+export function standardGraduation(curriculum: Curriculum): Term | null {
+  let last: Term | null = null
+  for (const s of curriculum.subjects) {
+    const term = { year: s.standard_year, sem: s.offered_sem }
+    if (!last || termIndex(term) > termIndex(last)) last = term
+  }
+  return last
+}
 
 /** Stop looking once this many terms in a row have nothing that can be planned. */
 const MAX_EMPTY_TERMS = 4
@@ -106,14 +113,15 @@ export function planCurriculum(
   }
 
   const unplanned = open.map((s) => s.code)
+  const standard = standardGraduation(curriculum)
   const graduation =
     unplanned.length > 0 ? null : (terms.at(-1)?.term ?? lastAttemptTerm(student))
 
   return {
     terms,
     graduation,
-    standardGraduation: STANDARD_GRADUATION,
-    termsBehind: graduation ? termIndex(graduation) - termIndex(STANDARD_GRADUATION) : null,
+    standardGraduation: standard,
+    termsBehind: graduation && standard ? termIndex(graduation) - termIndex(standard) : null,
     delays: findDelays(curriculum, student, terms, plannedIn),
     unplanned,
     ongoing: [...ongoing],

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { curriculum, demoStudent } from '../data'
+import { demoStudent, jdCurriculum as curriculum } from '../data'
 import { planCurriculum, type StudentData } from '../planner'
 import { setAttempts } from './student'
 import { capFromNow, failThisSem, thisSemSubjects } from './whatIf'

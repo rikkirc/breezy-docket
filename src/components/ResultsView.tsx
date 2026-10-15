@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { curriculum } from '../data'
+import { formatUnits, termsWithSubjects } from '../lib/curriculum'
 import {
   attemptsFor,
   defaultAttemptTerm,
@@ -7,9 +7,10 @@ import {
   setAttempts,
   statusOf,
 } from '../lib/student'
-import { termIndex, termLabel, type Attempt, type Result, type StudentData, type Subject } from '../planner'
+import { termIndex, termLabel, type Attempt, type Curriculum, type Result, type StudentData, type Subject } from '../planner'
 
 interface Props {
+  curriculum: Curriculum
   student: StudentData
   onChange: (student: StudentData) => void
 }
@@ -17,23 +18,11 @@ interface Props {
 const RESULTS: Result[] = ['Passed', 'Failed', 'Ongoing']
 const YEARS = [1, 2, 3, 4, 5, 6, 7, 8]
 
-/** Subjects grouped by their standard term, in curriculum order. */
-const groups: { key: string; label: string; subjects: Subject[] }[] = (() => {
-  const byTerm = new Map<number, Subject[]>()
-  for (const s of curriculum.subjects) {
-    const i = termIndex({ year: s.standard_year, sem: s.offered_sem })
-    byTerm.set(i, [...(byTerm.get(i) ?? []), s])
-  }
-  return [...byTerm.entries()]
-    .sort(([a], [b]) => a - b)
-    .map(([i, subjects]) => {
-      const term = { year: subjects[0].standard_year, sem: subjects[0].offered_sem }
-      return { key: String(i), label: termLabel(term), subjects }
-    })
-})()
-
-export function ResultsView({ student, onChange }: Props) {
+export function ResultsView({ curriculum, student, onChange }: Props) {
   const [open, setOpen] = useState<string | null>(null)
+  const groups = termsWithSubjects(curriculum)
+    .filter((t) => t.subjects.length > 0)
+    .map((t) => ({ key: String(termIndex(t.term)), label: termLabel(t.term), subjects: t.subjects }))
   const passedUnits = curriculum.subjects
     .filter((s) => statusOf(attemptsFor(student, s.code)) === 'Passed')
     .reduce((n, s) => n + s.units, 0)
@@ -109,7 +98,7 @@ function SubjectRow({
         aria-controls={editorId}
         onClick={onToggle}
       >
-        <span className="code">{subject.code}</span>
+        <span className="code">{subject.code}</span>{' '}
         <span className="title">{subject.title}</span>
         <span className={`badge badge-${status.toLowerCase().replace(' ', '-')}`}>{status}</span>
       </button>
@@ -117,7 +106,7 @@ function SubjectRow({
       {open && (
         <div id={editorId} className="attempts">
           <p className="muted small-text">
-            {subject.units} units · offered {subject.offered_sem === 1 ? '1st' : '2nd'} sem
+            {formatUnits(subject.units)} · offered {subject.offered_sem === 1 ? '1st' : '2nd'} sem
             {subject.prerequisites.length > 0 && ` · needs ${subject.prerequisites.join(', ')}`}
           </p>
           {subject.check && <p className="warning">To confirm: {subject.check}</p>}
