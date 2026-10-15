@@ -4,7 +4,7 @@ Plans the remaining subjects of a working law student (JD) into future semesters
 
 **Live demo:** https://rikkirc.github.io/curriculum-organizer/ (updates on every merge to `main`; opens on a phone too).
 
-**Status:** Milestone 2 — screens for results entry, the plan by term, the graduation date and delay reasons. Your data stays in your browser.
+**Status:** Milestone 3 — results entry, the plan by term, graduation date and delay reasons, what-if ("fail X this sem", "take 15 units"), JSON backup export/import, and installable on a phone (works offline). Your data stays in your browser.
 
 ## Run it
 
@@ -23,5 +23,6 @@ npm run dev       # the app at http://localhost:5173
   - `planner.test.ts` — the acceptance tests.
   - `naive.ts` — the simple standard-order fill the spec rejects, kept for the regression test.
 - `src/components/` — the Plan, Results and Settings screens.
-- `src/lib/` — edits on the student's data and saving to localStorage.
+- `src/lib/` — edits on the student's data, what-if scenarios, backup export/import, saving to localStorage.
+- `public/` — the app manifest, icons and the offline service worker (`sw.js`).
 - `.github/workflows/` — `tests.yml` (every push) and `deploy.yml` (GitHub Pages on merge to `main`).

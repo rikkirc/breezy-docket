@@ -15,6 +15,10 @@ function tab(name: string) {
   return within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', { name })
 }
 
+function whatIfGraduation() {
+  return screen.getByText('What-if graduation').parentElement!
+}
+
 function graduation() {
   return screen.getByText('Earliest graduation').parentElement!
 }
@@ -91,4 +95,61 @@ describe('the app', () => {
     expect(within(graduation()).getByText('Year 4, 2nd sem')).toBeInTheDocument()
     expect(within(graduation()).getByText('On schedule with the standard plan.')).toBeInTheDocument()
   })
+
+  test('what-if: failing 214 again shows a later date without saving it', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByText('What if…'))
+    await user.selectOptions(screen.getByRole('combobox', { name: /I fail this sem/ }), '214')
+    expect(within(whatIfGraduation()).getByText('Year 6, 2nd sem')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('1 year later than your plan (Year 5, 2nd sem)')
+    expect(screen.queryByRole('button', { name: 'Raise the cap' })).not.toBeInTheDocument()
+    expect(localStorage.getItem('curriculum-organizer:v1')).not.toContain('"year":3,"sem":1,"result":"Failed"')
+
+    await user.click(screen.getByRole('button', { name: 'Back to my plan' }))
+    expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
+  })
+
+  test('what-if: a different unit load', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByText('What if…'))
+    await user.selectOptions(screen.getByRole('combobox', { name: /units every sem/ }), '9')
+    expect(within(whatIfGraduation()).getByText('Year 6, 2nd sem')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('1 year later than your plan')
+  })
+
+  test('export a backup and import it back', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    let exported: Blob | undefined
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      exported = blob
+      return 'blob:backup'
+    })
+    URL.revokeObjectURL = vi.fn()
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(tab('Settings'))
+    await user.click(screen.getByRole('button', { name: 'Export backup' }))
+    expect(click).toHaveBeenCalled()
+    const text = await exported!.text()
+    expect(JSON.parse(text).student.results.find((r: { code: string }) => r.code === '214')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Start fresh' }))
+    await user.click(tab('Settings'))
+    await user.upload(screen.getByLabelText('Backup file'), new File([text], 'backup.json', { type: 'application/json' }))
+    expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
+    expect(screen.queryByText(/made-up demo student/)).not.toBeInTheDocument()
+  })
+
+  test('a bad backup file is refused with a message', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(tab('Settings'))
+    await user.upload(screen.getByLabelText('Backup file'), new File(['nope'], 'notes.txt', { type: 'application/json' }))
+    expect(screen.getByRole('alert')).toHaveTextContent("isn't valid JSON")
+  })
 })
+
