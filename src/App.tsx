@@ -63,9 +63,9 @@ export default function App() {
             student={saved.student}
             isDemo={saved.isDemo}
             onChange={update}
-            onReset={(student, isDemo) => {
+            onReset={(student, isDemo, next) => {
               setSaved({ student, isDemo })
-              show(isDemo ? 'plan' : 'results')
+              show(next ?? (isDemo ? 'plan' : 'results'))
             }}
           />
         )}

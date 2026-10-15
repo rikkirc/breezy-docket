@@ -1,5 +1,6 @@
 // The student's data stays in this browser (localStorage), never on a server: grades are personal data.
 import type { StudentData } from '../planner'
+import { studentProblem } from './backup'
 
 const KEY = 'curriculum-organizer:v1'
 
@@ -31,13 +32,5 @@ export function save(saved: Saved): void {
 function isSaved(value: unknown): value is Saved {
   if (typeof value !== 'object' || value === null) return false
   const { student, isDemo } = value as Partial<Saved>
-  return (
-    typeof isDemo === 'boolean' &&
-    typeof student === 'object' &&
-    student !== null &&
-    typeof student.unit_caps?.default === 'number' &&
-    typeof student.next_term?.year === 'number' &&
-    typeof student.next_term?.sem === 'number' &&
-    Array.isArray(student.results)
-  )
+  return typeof isDemo === 'boolean' && studentProblem(student) === null
 }

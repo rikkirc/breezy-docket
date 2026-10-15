@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { demoStudent } from '../data'
+import { backupFileName, makeBackup, parseBackup } from '../lib/backup'
+import { isInstalled, useInstallPrompt } from '../lib/useInstallPrompt'
 import { freshStudent, termAfterResults } from '../lib/student'
 import { parseTermKey, termIndex, termLabel, type StudentData } from '../planner'
 
@@ -7,7 +9,7 @@ interface Props {
   student: StudentData
   isDemo: boolean
   onChange: (student: StudentData) => void
-  onReset: (student: StudentData, isDemo: boolean) => void
+  onReset: (student: StudentData, isDemo: boolean, show?: 'plan' | 'results') => void
 }
 
 export function SettingsView({ student, isDemo, onChange, onReset }: Props) {
@@ -17,6 +19,30 @@ export function SettingsView({ student, isDemo, onChange, onReset }: Props) {
     return term !== null && termIndex(term) >= termIndex(student.next_term)
   })
   const suggested = termAfterResults(student)
+  const fileInput = useRef<HTMLInputElement>(null)
+  const [importError, setImportError] = useState<string | null>(null)
+  const install = useInstallPrompt()
+
+  const exportBackup = () => {
+    const blob = new Blob([JSON.stringify(makeBackup(student), null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = backupFileName()
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  const importBackup = async (file: File) => {
+    try {
+      const imported = parseBackup(await file.text())
+      if (!window.confirm('Replace the data in this browser with the backup?')) return
+      setImportError(null)
+      onReset(imported, false, 'plan')
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : String(error))
+    }
+  }
 
   return (
     <section aria-labelledby="settings-heading">
@@ -93,11 +119,56 @@ export function SettingsView({ student, isDemo, onChange, onReset }: Props) {
         )}
       </div>
 
+      {!isInstalled() && (
+        <div className="card form">
+          <h3>Install on your phone</h3>
+          {install ? (
+            <div className="row">
+              <button type="button" onClick={() => void install()}>
+                Install the app
+              </button>
+            </div>
+          ) : (
+            <p className="muted">
+              iPhone: open this page in Safari, tap Share, then Add to Home Screen. Android: open the
+              Chrome menu (⋮), then Add to Home screen or Install app.
+            </p>
+          )}
+          <p className="muted small-text">It then opens like an app and works offline.</p>
+        </div>
+      )}
+
       <div className="card form">
         <h3>Your data</h3>
         <p className="muted">
-          Everything stays in this browser on this device. Nothing is sent anywhere.
+          Everything stays in this browser on this device. Nothing is sent anywhere. Export a backup
+          to keep a copy or to move to another phone or computer.
         </p>
+        <div className="row">
+          <button type="button" onClick={exportBackup}>
+            Export backup
+          </button>
+          <button type="button" onClick={() => fileInput.current?.click()}>
+            Import backup
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            aria-label="Backup file"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              e.target.value = ''
+              if (file) void importBackup(file)
+            }}
+          />
+        </div>
+        {importError && (
+          <p className="error" role="alert">
+            {importError}
+          </p>
+        )}
         <div className="row">
           <button
             type="button"

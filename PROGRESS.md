@@ -2,14 +2,23 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-15) — Milestone 2: screens + live deploy
+## Current state (2026-10-15) — Milestone 3: what-if, backup, installable
 
 - **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
-- **Screens:** Plan (graduation date, terms with − / + unit cap, delay reasons), Results (Passed / Failed / Ongoing per subject, retakes as extra attempts), Settings (plan-from term, default cap, start fresh / demo).
-- **Data:** stays in the browser (localStorage). Opens on the made-up demo student until you start fresh.
-- **Tests:** 30 — the 5 planner acceptance tests and 12 planner checks, 8 for data edits and wording, 5 that drive the screens (jsdom). CI runs lint, type check, tests and build on every push.
+- **Screens:** Plan (graduation date, terms with − / + unit cap, delay reasons, what-if), Results (Passed / Failed / Ongoing per subject, retakes as extra attempts), Settings (plan-from term, default cap, install, backup, start fresh / demo).
+- **Data:** stays in the browser (localStorage); export/import a JSON backup to keep a copy or move devices.
+- **Install:** add to the home screen on iPhone or Android; opens like an app and works offline.
+- **Tests:** 53 — planner acceptance tests and checks (17), data edits and wording (8), what-if (8), backup (11), and 9 that drive the screens (jsdom). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-15 (night) — Milestone 3
+- What-if on the Plan: "I fail X this sem" (this sem = the Ongoing subjects, or the first planned semester) and "I take N units every sem from now on". Shows the what-if graduation next to your real one; nothing is saved.
+- Demo student: failing 214 again → Year 6, 2nd sem (1 year later); 9 units → Year 6, 2nd sem; 15 units → still Year 5, 2nd sem (the 214 → 305 → 312 → 401.2 chain sets the date, not the cap).
+- Backup: Export downloads `curriculum-organizer-backup-YYYY-MM-DD.json`; Import checks the file and says plainly what's wrong if it can't be used. Also accepts files shaped like `data/demo-student.json`.
+- Installable app (PWA): manifest, icons, and a service worker so it opens offline. Checked in Chromium: reloads with the network off.
+- Settings → Install on your phone: an Install button where the browser offers one, otherwise steps for iPhone and Android.
+- Confirmed Milestone 2's first Pages deploy succeeded.
 
 ### 2026-10-15 (evening) — Milestone 2
 - Screens: Plan, Results and Settings, built for phone first; light and dark mode follow the phone's setting.
@@ -41,9 +50,14 @@ What's done, what's next, and what's blocked. Newest entries first.
 - [ ] Try it on a real phone after the first deploy.
 
 ### Milestone 3
-- [ ] What-if ("fail X this sem", "take 15 units") without saving.
-- [ ] Export / import JSON backup.
-- [ ] PWA install.
+- [x] What-if ("fail X this sem", "take 15 units") without saving.
+- [x] Export / import JSON backup.
+- [x] PWA install.
+- [ ] Install on a real iPhone and Android phone; check it opens offline.
+
+### Milestone 4 — portfolio
+- [ ] README with screenshots (phone Plan, Results, what-if).
+- [ ] Demo link in the README (done) and a short case study (docs/CASE_STUDY.md).
 
 ## Known limits
 
