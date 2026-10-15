@@ -1,0 +1,81 @@
+import { describe, expect, test } from 'vitest'
+import { demoStudent, subjectsByCode, curriculum } from '../data'
+import { planCurriculum } from '../planner'
+import {
+  defaultAttemptTerm,
+  describeDelay,
+  describeGap,
+  freshStudent,
+  markAllPassed,
+  setAttempts,
+  setCap,
+  statusOf,
+  termAfterResults,
+} from './student'
+
+describe('student edits', () => {
+  test('status: Passed wins, otherwise the latest attempt', () => {
+    expect(statusOf([])).toBe('Not taken')
+    expect(
+      statusOf([
+        { year: 2, sem: 1, result: 'Failed' },
+        { year: 3, sem: 1, result: 'Ongoing' },
+      ]),
+    ).toBe('Ongoing')
+    expect(
+      statusOf([
+        { year: 3, sem: 1, result: 'Passed' },
+        { year: 2, sem: 1, result: 'Failed' },
+      ]),
+    ).toBe('Passed')
+  })
+
+  test('a retake defaults to the next time the subject runs', () => {
+    const corpo = subjectsByCode.get('214')!
+    expect(defaultAttemptTerm(corpo, [])).toEqual({ year: 2, sem: 1 })
+    expect(defaultAttemptTerm(corpo, [{ year: 2, sem: 1, result: 'Failed' }])).toEqual({ year: 3, sem: 1 })
+  })
+
+  test('setAttempts keeps one row per subject and drops empty rows', () => {
+    const passed = setAttempts(demoStudent, '214', [
+      { year: 2, sem: 1, result: 'Failed' },
+      { year: 3, sem: 1, result: 'Passed' },
+    ])
+    expect(passed.results.filter((r) => r.code === '214')).toHaveLength(1)
+    expect(setAttempts(passed, '214', []).results.some((r) => r.code === '214')).toBe(false)
+    expect(demoStudent.results.find((r) => r.code === '214')!.attempts).toHaveLength(1)
+  })
+
+  test('markAllPassed only touches subjects with no attempts', () => {
+    const student = markAllPassed(demoStudent, curriculum.subjects.filter((s) => s.standard_year === 2))
+    expect(statusOf(student.results.find((r) => r.code === '214')!.attempts)).toBe('Failed')
+    expect(markAllPassed(freshStudent(), curriculum.subjects).results).toHaveLength(53)
+  })
+
+  test('a cap equal to the default is not stored as an override', () => {
+    const raised = setCap(demoStudent, { year: 3, sem: 1 }, 15)
+    expect(raised.unit_caps.by_term?.['Y3-1']).toBe(15)
+    expect(setCap(raised, { year: 3, sem: 1 }, 12).unit_caps.by_term?.['Y3-1']).toBeUndefined()
+  })
+
+  test('the term after the results', () => {
+    expect(termAfterResults(freshStudent())).toBeNull()
+    expect(termAfterResults(demoStudent)).toEqual({ year: 3, sem: 1 })
+  })
+})
+
+describe('wording', () => {
+  test('delay reasons for Commercial Laws I name Corporation Law', () => {
+    const delay = planCurriculum(curriculum, demoStudent).delays.find((d) => d.code === '305')!
+    expect(describeDelay(delay, subjectsByCode)).toEqual([
+      'Needs 214 Corporation and Basic Securities Law passed first (not passed by Year 3, 1st sem).',
+      'Only offered in the 1st sem.',
+    ])
+  })
+
+  test('gaps in years and sems', () => {
+    expect(describeGap(1)).toBe('1 sem')
+    expect(describeGap(2)).toBe('1 year')
+    expect(describeGap(5)).toBe('2 years and 1 sem')
+  })
+})

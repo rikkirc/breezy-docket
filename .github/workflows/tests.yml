@@ -1,0 +1,25 @@
+# Runs the planner's acceptance tests (Vitest), the type check, lint and a production build
+name: Tests
+
+# Runs on every push and pull request, on any branch, and on demand
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # A normal run takes under a minute; never let a stuck test hold a runner for long
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
