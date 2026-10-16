@@ -65,6 +65,7 @@ function cleanStudent(student: StudentData): StudentData {
       by_term: { ...student.unit_caps.by_term },
     },
     next_term: { year: student.next_term.year, sem: student.next_term.sem },
+    ...(student.not_before && Object.keys(student.not_before).length > 0 ? { not_before: { ...student.not_before } } : {}),
     results: student.results.map((r) => ({
       code: r.code,
       attempts: r.attempts.map((a: Attempt) => ({ year: a.year, sem: a.sem, result: a.result })),
@@ -85,6 +86,12 @@ export function studentProblem(value: unknown): string | null {
     }
   }
   if (!isTerm(value.next_term)) return 'the semester to plan from is missing.'
+  if (value.not_before !== undefined) {
+    if (!isObject(value.not_before)) return 'the postponed subjects are not readable.'
+    for (const [code, key] of Object.entries(value.not_before)) {
+      if (typeof key !== 'string' || !/^Y\d+-[12]$/.test(key)) return `the postponement of ${code} is not readable.`
+    }
+  }
   if (!Array.isArray(value.results)) return 'the results list is missing.'
   const seen = new Set<string>()
   for (const r of value.results) {

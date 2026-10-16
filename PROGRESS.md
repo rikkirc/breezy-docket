@@ -6,11 +6,15 @@ What's done, what's next, and what's blocked. Newest entries first.
 
 - **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
 - **Flow:** (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
-- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units per semester; finished ones folded; the current one with Passed / Failed / Taking; what moved and why; a prompt when a full-load semester is pushed over its load), Curriculum, Settings.
+- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the current one with Passed / Failed / Taking / Not this sem; what moved and why; a prompt when a full-load semester is pushed over its load), Curriculum, Settings.
 - **Data:** curriculum and results stay in the browser (localStorage); backups include the curriculum.
-- **Tests:** 73 — planner (24), data edits and wording (7), curriculum edits and recording (10), backup (13), screens in jsdom (19). CI runs lint, type check, tests and build on every push.
+- **Tests:** 75 — planner (25), data edits and wording (7), curriculum edits and recording (10), backup (13), screens in jsdom (20). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 (evening) — "Not this sem" and fixed semester units
+- Subjects in the current semester have a **Not this sem** button: the subject moves to the next semester it's offered (a year later), and every subject that needs it moves too, following the prerequisite rules. The moved subject says "You chose not to take it in …" with an Undo link. Stored as `not_before` on the student (kept in backups).
+- Each semester shows the units taken against that semester's load in the curriculum ("12 of 16 units"); the − / + buttons are gone, so the curriculum load stays fixed. Semesters after the standard plan show just their units. The cap itself is set in Settings (Default or Custom) or by the full-load prompt.
 
 ### 2026-10-16 (later) — Working Subjects replaces the Plan
 - The Plan tab and what-if are gone. Working Subjects now shows every semester: finished ones fold to one line ("18 units · 6 passed"), the current one has Passed / Failed / Taking per subject and "Mark all passed", later ones show what's planned. Tap a recorded result to change or remove it.

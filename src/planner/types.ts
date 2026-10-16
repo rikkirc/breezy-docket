@@ -56,6 +56,8 @@ export interface StudentData {
   /** The first term the planner may fill. */
   next_term: Term
   results: SubjectRecord[]
+  /** Subjects the student chose not to take yet: code → the earliest term to plan it in, keyed like "Y4-1". */
+  not_before?: Record<string, string>
 }
 
 export interface PlannedSubject {
@@ -79,6 +81,7 @@ export type DelayReason =
   | { kind: 'other_semester'; term: Term }
   | { kind: 'unit_cap'; term: Term }
   | { kind: 'failed'; term: Term }
+  | { kind: 'postponed'; term: Term }
 
 export interface Delay {
   code: string

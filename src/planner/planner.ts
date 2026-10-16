@@ -1,4 +1,4 @@
-import { nextTerm, termFromIndex, termIndex, termKey, termLabel } from './terms'
+import { nextTerm, parseTermKey, termFromIndex, termIndex, termKey, termLabel } from './terms'
 import type {
   Attempt,
   Overload,
@@ -93,6 +93,11 @@ export function planCurriculum(
   const order = new Map(curriculum.subjects.map((s, i) => [s.code, i]))
   const start = planStart(student)
   const startIndex = termIndex(start)
+  const notBefore = new Map<string, number>()
+  for (const [code, key] of Object.entries(student.not_before ?? {})) {
+    const term = parseTermKey(key)
+    if (term) notBefore.set(code, termIndex(term))
+  }
 
   // Results recorded before the start term are settled; those in the start term take up its units and
   // count as passed only from the next term on.
@@ -129,6 +134,7 @@ export function planCurriculum(
       (s) =>
         s.offered_sem === term.sem &&
         (options.allowEarly || termIndex({ year: s.standard_year, sem: s.offered_sem }) <= index) &&
+        index >= (notBefore.get(s.code) ?? -Infinity) &&
         !(index === startIndex && inStartTerm.has(s.code)) &&
         s.units <= cap &&
         s.prerequisites.every((p) => done.has(p) || !subjects.has(p)),
@@ -297,6 +303,11 @@ function findDelays(
   }
 
   const startIndex = termIndex(start)
+  const postponedUntil = new Map<string, number>()
+  for (const [code, key] of Object.entries(student.not_before ?? {})) {
+    const term = parseTermKey(key)
+    if (term) postponedUntil.set(code, termIndex(term))
+  }
   const delays: Delay[] = []
   for (const subject of curriculum.subjects) {
     const planned = plannedIn.get(subject.code)
@@ -314,6 +325,10 @@ function findDelays(
         continue
       }
       if (i < startIndex) continue
+      if (i < (postponedUntil.get(subject.code) ?? -Infinity) && subject.offered_sem === term.sem) {
+        reasons.push({ kind: 'postponed', term })
+        continue
+      }
       if (subject.offered_sem !== term.sem) {
         reasons.push({ kind: 'other_semester', term })
         continue

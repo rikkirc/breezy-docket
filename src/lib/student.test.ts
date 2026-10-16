@@ -8,8 +8,9 @@ import {
   describeGap,
   freshStudent,
   setAttempts,
-  setCap,
+  postpone,
   setCapMode,
+  undoPostpone,
   statusOf,
   termAfterResults,
 } from './student'
@@ -41,10 +42,10 @@ describe('student edits', () => {
     expect(demoStudent.results.find((r) => r.code === '214')!.attempts).toHaveLength(1)
   })
 
-  test('a cap equal to the default is not stored as an override', () => {
-    const raised = setCap(demoStudent, { year: 3, sem: 1 }, 15, 12)
-    expect(raised.unit_caps.by_term?.['Y3-1']).toBe(15)
-    expect(setCap(raised, { year: 3, sem: 1 }, 12, 12).unit_caps.by_term?.['Y3-1']).toBeUndefined()
+  test('postponing a subject plans it a year later, and undo clears it', () => {
+    const later = postpone(demoStudent, '304', { year: 3, sem: 1 })
+    expect(later.not_before).toEqual({ '304': 'Y4-1' })
+    expect(undoPostpone(later, '304').not_before).toEqual({})
   })
 
   test('the cap mode switches between full load and a fixed number', () => {
