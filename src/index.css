@@ -867,3 +867,59 @@ button.chip-remove:hover {
 .form .choice > span {
   font-weight: 400;
 }
+
+/* Working Subjects */
+
+.term.current {
+  border-color: var(--accent);
+  border-width: 2px;
+}
+
+.term-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge.tag {
+  font-size: 0.7rem;
+}
+
+.prompt {
+  border-color: var(--late);
+  background: var(--late-bg);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.prompt p {
+  margin: 0;
+}
+
+.prompt .cap-number input {
+  width: 7rem;
+}
+
+.term.past summary {
+  cursor: pointer;
+  list-style: none;
+  margin-bottom: 0;
+}
+
+.term.past summary::-webkit-details-marker {
+  display: none;
+}
+
+.term.past summary h3::before {
+  content: '▸';
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.term.past details[open] summary h3::before {
+  content: '▾';
+}
+
+.term.past details[open] summary {
+  margin-bottom: 0.5rem;
+}

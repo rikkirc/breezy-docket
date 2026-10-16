@@ -15,7 +15,7 @@ import {
   updateSubject,
 } from './curriculum'
 import { fromStored } from './storage'
-import { dropOngoing, finishOngoing, freshStudent, startTerm } from './student'
+import { freshStudent, recordResult, removeResult } from './student'
 
 const Y1S1 = { year: 1, sem: 1 }
 const Y1S2 = { year: 1, sem: 2 }
@@ -82,14 +82,15 @@ describe('editing the curriculum', () => {
   })
 })
 
-describe('taking a semester', () => {
-  test('start, then pass or fail, or drop', () => {
-    const started = startTerm(freshStudent(), Y1S1, ['A', 'B'])
-    expect(started.next_term).toEqual(Y1S2)
-    expect(started.results.map((r) => r.attempts[0].result)).toEqual(['Ongoing', 'Ongoing'])
-    const graded = finishOngoing(started, 'A', 'Failed')
-    expect(graded.results.find((r) => r.code === 'A')?.attempts).toEqual([{ ...Y1S1, result: 'Failed' }])
-    expect(dropOngoing(graded, 'B').results.some((r) => r.code === 'B')).toBe(false)
+describe('recording results by semester', () => {
+  test('record, change, then remove a result', () => {
+    const passed = recordResult(freshStudent(), 'A', Y1S1, 'Ongoing')
+    expect(passed.results).toEqual([{ code: 'A', attempts: [{ ...Y1S1, result: 'Ongoing' }] }])
+    const failed = recordResult(passed, 'A', Y1S1, 'Failed')
+    expect(failed.results[0].attempts).toEqual([{ ...Y1S1, result: 'Failed' }])
+    const retaken = recordResult(failed, 'A', { year: 2, sem: 1 }, 'Passed')
+    expect(retaken.results[0].attempts).toHaveLength(2)
+    expect(removeResult(retaken, 'A', Y1S1).results[0].attempts).toEqual([{ year: 2, sem: 1, result: 'Passed' }])
   })
 })
 

@@ -4,11 +4,9 @@ import { demoStudent, jdCurriculum as curriculum, subjectMap } from '../data'
 const subjectsByCode = subjectMap(curriculum)
 import { planCurriculum } from '../planner'
 import {
-  defaultAttemptTerm,
   describeDelay,
   describeGap,
   freshStudent,
-  markAllPassed,
   setAttempts,
   setCap,
   setCapMode,
@@ -33,12 +31,6 @@ describe('student edits', () => {
     ).toBe('Passed')
   })
 
-  test('a retake defaults to the next time the subject runs', () => {
-    const corpo = subjectsByCode.get('214')!
-    expect(defaultAttemptTerm(corpo, [])).toEqual({ year: 2, sem: 1 })
-    expect(defaultAttemptTerm(corpo, [{ year: 2, sem: 1, result: 'Failed' }])).toEqual({ year: 3, sem: 1 })
-  })
-
   test('setAttempts keeps one row per subject and drops empty rows', () => {
     const passed = setAttempts(demoStudent, '214', [
       { year: 2, sem: 1, result: 'Failed' },
@@ -47,12 +39,6 @@ describe('student edits', () => {
     expect(passed.results.filter((r) => r.code === '214')).toHaveLength(1)
     expect(setAttempts(passed, '214', []).results.some((r) => r.code === '214')).toBe(false)
     expect(demoStudent.results.find((r) => r.code === '214')!.attempts).toHaveLength(1)
-  })
-
-  test('markAllPassed only touches subjects with no attempts', () => {
-    const student = markAllPassed(demoStudent, curriculum.subjects.filter((s) => s.standard_year === 2))
-    expect(statusOf(student.results.find((r) => r.code === '214')!.attempts)).toBe('Failed')
-    expect(markAllPassed(freshStudent(), curriculum.subjects).results).toHaveLength(53)
   })
 
   test('a cap equal to the default is not stored as an override', () => {

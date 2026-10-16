@@ -3,23 +3,21 @@ import type { Workspace } from './lib/curriculum'
 import { demoSaved, initialSaved, loadSaved, save, type Saved } from './lib/storage'
 import { planCurriculum, type StudentData } from './planner'
 import { CurriculumView } from './components/CurriculumView'
-import { PlanView } from './components/PlanView'
-import { ResultsView } from './components/ResultsView'
 import { SettingsView } from './components/SettingsView'
 import { Setup } from './components/Setup'
+import { WorkingSubjects } from './components/WorkingSubjects'
 
-type Tab = 'plan' | 'results' | 'curriculum' | 'settings'
+type Tab = 'working' | 'curriculum' | 'settings'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'plan', label: 'Plan' },
-  { id: 'results', label: 'Working Subjects' },
+  { id: 'working', label: 'Working Subjects' },
   { id: 'curriculum', label: 'Curriculum' },
   { id: 'settings', label: 'Settings' },
 ]
 
 export default function App() {
   const [saved, setSaved] = useState<Saved>(() => loadSaved() ?? initialSaved())
-  const [tab, setTab] = useState<Tab>('plan')
+  const [tab, setTab] = useState<Tab>('working')
   const plan = useMemo(() => planCurriculum(saved.curriculum, saved.student), [saved.curriculum, saved.student])
 
   useEffect(() => save(saved), [saved])
@@ -32,7 +30,7 @@ export default function App() {
   }
   const replace = (next: Saved, nextTab?: Tab) => {
     setSaved(next)
-    show(nextTab ?? 'plan')
+    show(nextTab ?? 'working')
   }
 
   return (
@@ -63,7 +61,7 @@ export default function App() {
             onChange={updateWorkspace}
             onFinish={() => {
               setSaved((s) => ({ ...s, setupDone: true }))
-              show('results')
+              show('working')
             }}
             onTryDemo={() => replace(demoSaved())}
           />
@@ -78,11 +76,8 @@ export default function App() {
                 .
               </p>
             )}
-            {tab === 'plan' && (
-              <PlanView curriculum={saved.curriculum} plan={plan} student={saved.student} onChange={updateStudent} />
-            )}
-            {tab === 'results' && (
-              <ResultsView curriculum={saved.curriculum} student={saved.student} onChange={updateStudent} />
+            {tab === 'working' && (
+              <WorkingSubjects curriculum={saved.curriculum} plan={plan} student={saved.student} onChange={updateStudent} />
             )}
             {tab === 'curriculum' && <CurriculumView workspace={saved} onChange={updateWorkspace} />}
             {tab === 'settings' && (
