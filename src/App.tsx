@@ -6,6 +6,8 @@ import { CurriculumView } from './components/CurriculumView'
 import { SettingsView } from './components/SettingsView'
 import { Setup } from './components/Setup'
 import { ConflictPrompt, SignInScreen } from './components/AccountPanel'
+import { PrivacyNotice } from './components/PrivacyNotice'
+import { UNOFFICIAL_NOTE, XU_LAW } from './components/Templates'
 import { useAccount } from './cloud/useAccount'
 import { WorkingSubjects } from './components/WorkingSubjects'
 
@@ -20,6 +22,7 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   const [saved, setSaved] = useState<Saved>(() => loadSaved() ?? initialSaved())
   const [tab, setTab] = useState<Tab>('working')
+  const [privacy, setPrivacy] = useState(false)
   const plan = useMemo(() => planCurriculum(saved.curriculum, saved.student, { overCap: 'flag' }), [saved.curriculum, saved.student])
 
   useEffect(() => save(saved), [saved])
@@ -29,6 +32,11 @@ export default function App() {
   const updateWorkspace = ({ curriculum, student }: Workspace) => setSaved((s) => ({ ...s, curriculum, student }))
   const show = (next: Tab) => {
     setTab(next)
+    setPrivacy(false)
+    document.scrollingElement?.scrollTo?.(0, 0)
+  }
+  const openPrivacy = () => {
+    setPrivacy(true)
     document.scrollingElement?.scrollTo?.(0, 0)
   }
   const replace = (next: Saved, nextTab?: Tab) => {
@@ -43,7 +51,7 @@ export default function App() {
     <>
       <header className="app-header">
         <h1>Breezy Docket</h1>
-        {saved.setupDone && signedIn && (
+        {saved.setupDone && signedIn && !privacy && (
           <nav className="tabs" aria-label="Sections">
             {TABS.map((t) => (
               <button
@@ -62,9 +70,16 @@ export default function App() {
 
       <main>
         {signedIn && <ConflictPrompt account={account} />}
-        {!signedIn ? (
+        {privacy ? (
+          <PrivacyNotice
+            onBack={() => {
+              setPrivacy(false)
+              document.scrollingElement?.scrollTo?.(0, 0)
+            }}
+          />
+        ) : !signedIn ? (
           account.user === null ? (
-            <SignInScreen account={account} />
+            <SignInScreen account={account} onPrivacy={openPrivacy} />
           ) : (
             <p className="muted loading" role="status">
               {account.user ? 'Opening your plan…' : 'Loading…'}
@@ -84,11 +99,11 @@ export default function App() {
           <>
             {saved.isDemo && (
               <p className="banner">
-                You're looking at a made-up demo student. To plan your own, go to{' '}
+                You're looking at a made-up demo student on the {XU_LAW}. To plan your own, go to{' '}
                 <button type="button" className="link" onClick={() => show('settings')}>
                   Settings
                 </button>
-                .
+                .<span className="unofficial small-text">{UNOFFICIAL_NOTE}</span>
               </p>
             )}
             {tab === 'working' && (
@@ -98,6 +113,7 @@ export default function App() {
             {tab === 'settings' && (
               <SettingsView
                 account={account}
+                onPrivacy={openPrivacy}
                 curriculum={saved.curriculum}
                 student={saved.student}
                 isDemo={saved.isDemo}

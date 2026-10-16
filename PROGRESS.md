@@ -2,15 +2,21 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-16) — sign in first, then Working Subjects
+## Current state (2026-10-16) — sign in first (with a Privacy notice), then Working Subjects
 
 - **Live:** https://rikkirc.github.io/breezy-docket/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
-- **Flow:** (0) sign in (Google or email) — the app always opens on the sign-in screen and then shows that account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
-- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings.
-- **Data:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; backups include the curriculum.
-- **Tests:** 104 — planner (29), data edits and wording (10), curriculum edits and recording (10), backup (13), templates (2), sync (5), screens in jsdom (26), account flow (9); plus 5 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
+- **Flow:** (0) sign in (Google or email; agree to the Privacy notice before creating an account) — the app always opens on the sign-in screen and then shows that account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
+- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings, Privacy notice.
+- **Data:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; the date the student agreed to the Privacy notice is kept with the plan; backups include the curriculum.
+- **Tests:** 114 — planner (29), data edits and wording (10), curriculum edits and recording (10), backup (13), templates (2), sync (7), screens in jsdom (28), account flow (15); plus 6 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 — Privacy notice, consent, unofficial label
+- **Privacy notice** screen, linked from the sign-in screen and Settings → Account: what the app keeps, where (this device and Google Firebase; servers may be outside the Philippines), who can see it, how long, the student's rights, and grades as sensitive personal information under RA 10173. Checked against the code: no analytics or tracking; the developer can access the Firebase project; saved subject templates stay in the browser after sign-out. Contact address still to be set (`PRIVACY_CONTACT`).
+- **Consent before an account is created:** "I've read the Privacy notice and agree to Breezy Docket keeping my plan and results in my account." Create account and Continue with Google stay disabled until it's ticked; email sign-in to an existing account doesn't need it. The date agreed is saved as `consentedAt` in the plan document and kept on every save; `firestore.rules` allows that one field (a date string) — publish the new rules before deploying.
+- **Unofficial label** on the Xavier University - School of Law Curriculum (template list in setup, demo banner): "Based on the current official curriculum. Unofficial app, not affiliated with or endorsed by Xavier University." The template matches the current official curriculum; the leftover `check` notes are removed from `data/jd-curriculum.json`.
+- Settings → Your data no longer says "Nothing is sent anywhere" when accounts are on.
 
 ### 2026-10-16 — Breezy Docket
 - The app is now **Breezy Docket** (header, browser tab, phone install name). The sign-in screen shows the tagline "Breeze your way through every sem, all the way to graduation." and "by: RCbreezy©". The link is now https://rikkirc.github.io/breezy-docket/ (repository renamed from curriculum-organizer).
@@ -119,12 +125,11 @@ What's done, what's next, and what's blocked. Newest entries first.
 - [ ] Install on a real iPhone and Android phone; check it opens offline.
 
 ### Milestone 4 — portfolio
-- [ ] README with screenshots (phone Plan, Results, what-if).
+- [ ] README screenshots: sign-in, setup, Working Subjects, focus notes.
 - [ ] Demo link in the README (done) and a short case study (docs/CASE_STUDY.md).
 
 ## Known limits
 
-- Subjects flagged with `check` in the curriculum JSON (214, 204, 206, 404, 414, 312, 315) still need confirming against the official curriculum; plans for them may change.
 - No summer terms, and the cap is never exceeded (open question in SPEC.md: can a student go over with approval?).
 - No year-standing rules (e.g. review subjects needing all 3rd-year subjects) until the school confirms them.
 - A prerequisite code that isn't in the curriculum is treated as satisfied.

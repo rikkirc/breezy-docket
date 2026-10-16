@@ -134,8 +134,7 @@
       "offered_sem": 1,
       "prerequisites": [
         "111"
-      ],
-      "check": "Code suggests 2nd sem, but you took it in 1st sem twice (Y2 and Y3). Confirm it's only offered in 1st sem."
+      ]
     },
     {
       "code": "205",
@@ -211,8 +210,7 @@
       "offered_sem": 2,
       "prerequisites": [
         "102"
-      ],
-      "check": "Code suggests 1st sem, but your plan has it in 2nd sem. Confirm."
+      ]
     },
     {
       "code": "215",
@@ -252,8 +250,7 @@
       "offered_sem": 2,
       "prerequisites": [
         "111"
-      ],
-      "check": "Code suggests 1st sem, but your plan has it in 2nd sem. Confirm."
+      ]
     },
     {
       "code": "301",
@@ -357,8 +354,7 @@
         "205",
         "207",
         "217"
-      ],
-      "check": "Long prerequisite list copied from your tracker, including 305 (Commercial Laws I). Confirm against the official curriculum."
+      ]
     },
     {
       "code": "313",
@@ -389,8 +385,7 @@
       "prerequisites": [
         "111",
         "214"
-      ],
-      "check": "Your tracker marks it 'Conditional: if Corpo is passed'. Modelled as a normal prerequisite on 214."
+      ]
     },
     {
       "code": "316",
@@ -474,8 +469,7 @@
       "prerequisites": [
         "207",
         "217"
-      ],
-      "check": "Code suggests 2nd sem, but your plan has it in 1st sem. Confirm."
+      ]
     },
     {
       "code": "401.2",
@@ -500,8 +494,7 @@
       "prerequisites": [
         "205",
         "215"
-      ],
-      "check": "Code suggests 1st sem, but your plan has it in 2nd sem. Confirm."
+      ]
     },
     {
       "code": "411",

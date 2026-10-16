@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { demoStudent, jdCurriculum } from '../data'
 import { demoSaved, initialSaved, type Saved } from './storage'
-import { decideOnSignIn, fromCloudPlan, isBlank, readCloudPlan, toCloudPlan } from './sync'
+import { decideOnSignIn, fromCloudPlan, isBlank, readCloudPlan, readConsent, toCloudPlan } from './sync'
 
 const mine: Saved = { curriculum: jdCurriculum, student: demoStudent, isDemo: false, setupDone: true }
 
@@ -39,5 +39,22 @@ describe('the stored plan', () => {
     expect(readCloudPlan({ version: 2, curriculum: jdCurriculum, student: demoStudent, setupDone: true })).toBeNull()
     expect(readCloudPlan({ ...toCloudPlan(mine), student: { results: 'x' } })).toBeNull()
     expect(readCloudPlan({ ...toCloudPlan(mine), curriculum: { program: {}, subjects: [] } })).toBeNull()
+  })
+})
+
+describe('the Privacy notice agreement', () => {
+  test('is read from the stored plan when present, and never treated as part of the plan', () => {
+    const stored = { ...toCloudPlan(mine), consentedAt: '2026-10-16T09:30:00.000Z' }
+    expect(readConsent(stored)).toBe('2026-10-16T09:30:00.000Z')
+    expect(readCloudPlan(stored)).toEqual(toCloudPlan(mine))
+    // A plan agreed on in the account still matches the same plan on this device
+    expect(decideOnSignIn(mine, readCloudPlan(stored))).toBe('use-cloud')
+  })
+
+  test('is missing for plans saved before it existed, or when the value is not a date string', () => {
+    expect(readConsent(toCloudPlan(mine))).toBeNull()
+    expect(readConsent({ ...toCloudPlan(mine), consentedAt: 5 })).toBeNull()
+    expect(readConsent({ ...toCloudPlan(mine), consentedAt: '' })).toBeNull()
+    expect(readConsent(null)).toBeNull()
   })
 })

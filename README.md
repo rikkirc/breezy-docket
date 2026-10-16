@@ -5,6 +5,7 @@
 Plans the remaining subjects of a working student into future semesters under a unit cap, and shows the earliest graduation term. The student first builds their own curriculum (subjects, units, prerequisites), or starts from the built-in Xavier University - School of Law curriculum. See [SPEC.md](SPEC.md) for the full plan and [PROGRESS.md](PROGRESS.md) for where things stand.
 
 **Live demo:** https://rikkirc.github.io/breezy-docket/ (updates on every merge to `main`; opens on a phone too).
+Your data is private to your account. See the Privacy notice in the app.
 
 **Status:** first-run setup builds the curriculum in 3 steps (subjects and units by semester → prerequisites → review the default plan and unit cap). Then Working Subjects shows every semester: record results as you go, and failed subjects plus everything that needs them move to their next offering automatically, with the expected graduation on top. JSON backup; installable on a phone (works offline). The app opens on a sign-in screen (Google or email); your plan is kept in your account and syncs across devices — see [docs/ACCOUNTS.md](docs/ACCOUNTS.md).
 

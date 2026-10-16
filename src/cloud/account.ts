@@ -93,8 +93,9 @@ export async function loadPlan(cloud: Cloud, uid: string): Promise<unknown> {
   return snapshot.exists() ? withoutTimestamp(snapshot.data()) : null
 }
 
-export async function savePlan(cloud: Cloud, uid: string, plan: CloudPlan): Promise<void> {
-  await setDoc(planDoc(cloud, uid), { ...plan, updatedAt: serverTimestamp() })
+/** Stores the plan, with the date the student agreed to the Privacy notice when there is one. */
+export async function savePlan(cloud: Cloud, uid: string, plan: CloudPlan, consentedAt?: string | null): Promise<void> {
+  await setDoc(planDoc(cloud, uid), { ...plan, ...(consentedAt ? { consentedAt } : {}), updatedAt: serverTimestamp() })
 }
 
 /** Calls back with plans saved from other devices (this device's own pending writes are skipped). */

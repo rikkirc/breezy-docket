@@ -2,7 +2,7 @@
 //   npm run test:firebase      (needs Java; the first run downloads the emulators)
 import assert from 'node:assert/strict'
 import { after, test } from 'node:test'
-import { collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore'
+import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore'
 import {
   connect,
   createAccount,
@@ -88,6 +88,22 @@ test('only the plan fields can be stored, with a server timestamp', async () => 
   await denied(setDoc(doc(d.db, 'plans', user.uid), { ...plan, updatedAt: new Date(0) }))
   await denied(setDoc(doc(d.db, 'plans', user.uid), { ...plan, version: 2 }))
   await denied(setDoc(doc(d.db, 'other', 'thing'), { a: 1 }))
+})
+
+test('the date the student agreed to the Privacy notice can be stored with the plan, as a date string only', async () => {
+  const d = device()
+  const user = await createAccount(d, email('consent'), 'a good password')
+  const agreedAt = '2026-10-16T09:30:00.000Z'
+  await savePlan(d, user.uid, plan, agreedAt)
+  assert.deepEqual(await loadPlan(d, user.uid), { ...plan, consentedAt: agreedAt })
+
+  await denied(setDoc(doc(d.db, 'plans', user.uid), { ...plan, consentedAt: 20261016, updatedAt: serverTimestamp() }))
+  await denied(setDoc(doc(d.db, 'plans', user.uid), { ...plan, consentedAt: '', updatedAt: serverTimestamp() }))
+  await denied(setDoc(doc(d.db, 'plans', user.uid), { ...plan, consentedAt: 'x'.repeat(41), updatedAt: serverTimestamp() }))
+  // Still only the owner
+  const other = device()
+  await createAccount(other, email('nosy'), 'a good password')
+  await denied(setDoc(doc(other.db, 'plans', user.uid), { ...plan, consentedAt: agreedAt, updatedAt: serverTimestamp() }))
 })
 
 test('deleting the account deletes the stored plan', async () => {
