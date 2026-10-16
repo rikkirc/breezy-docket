@@ -1,4 +1,4 @@
-# Publishes the app to GitHub Pages on every merge to main: https://rikkirc.github.io/curriculum-organizer/
+# Publishes the app to GitHub Pages on every merge to main: https://rikkirc.github.io/breezy-docket/
 # (Settings → Pages → Source must be "GitHub Actions".)
 name: Deploy
 
