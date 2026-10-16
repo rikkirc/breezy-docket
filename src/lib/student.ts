@@ -26,25 +26,6 @@ export function setAttempts(student: StudentData, code: string, attempts: Attemp
   return { ...student, results }
 }
 
-/** The term a new attempt defaults to: the standard term, or the next time it runs after the last attempt. */
-export function defaultAttemptTerm(subject: Subject, attempts: Attempt[]): Term {
-  if (attempts.length === 0) return { year: subject.standard_year, sem: subject.offered_sem }
-  const last = Math.max(...attempts.map(termIndex))
-  let term = nextTerm(termFromIndex(last))
-  while (term.sem !== subject.offered_sem) term = nextTerm(term)
-  return term
-}
-
-/** Marks every subject in the list that has no attempts yet as Passed in its standard term. */
-export function markAllPassed(student: StudentData, subjects: Subject[]): StudentData {
-  let next = student
-  for (const s of subjects) {
-    if (attemptsFor(next, s.code).length > 0) continue
-    next = setAttempts(next, s.code, [{ year: s.standard_year, sem: s.offered_sem, result: 'Passed' }])
-  }
-  return next
-}
-
 /** Sets one term's cap. `base` is what the term gets without an override; matching it removes the override. */
 export function setCap(student: StudentData, term: Term, cap: number, base: number): StudentData {
   const byTerm = { ...student.unit_caps.by_term }
@@ -110,25 +91,17 @@ function joinAnd(items: string[]): string {
   return `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
 }
 
-/** "I'm taking these now": records the subjects as Ongoing in that term and plans from the term after it. */
-export function startTerm(student: StudentData, term: Term, codes: string[]): StudentData {
-  let next = student
-  for (const code of codes) {
-    next = setAttempts(next, code, [...attemptsFor(next, code), { year: term.year, sem: term.sem, result: 'Ongoing' }])
-  }
-  return { ...next, next_term: nextTerm(term) }
+/** Records (or changes) a subject's result in a semester. One attempt per subject per semester. */
+export function recordResult(student: StudentData, code: string, term: Term, result: Result): StudentData {
+  const attempts = attemptsFor(student, code)
+  const same = (a: Attempt) => termIndex(a) === termIndex(term)
+  const next = attempts.some(same)
+    ? attempts.map((a) => (same(a) ? { ...a, result } : a))
+    : [...attempts, { year: term.year, sem: term.sem, result }]
+  return setAttempts(student, code, next)
 }
 
-/** Turns a subject's Ongoing attempt into Passed or Failed. */
-export function finishOngoing(student: StudentData, code: string, result: 'Passed' | 'Failed'): StudentData {
-  return setAttempts(
-    student,
-    code,
-    attemptsFor(student, code).map((a) => (a.result === 'Ongoing' ? { ...a, result } : a)),
-  )
-}
-
-/** Removes a subject's Ongoing attempt (the student dropped it or didn't enrol after all). */
-export function dropOngoing(student: StudentData, code: string): StudentData {
-  return setAttempts(student, code, attemptsFor(student, code).filter((a) => a.result !== 'Ongoing'))
+/** Removes a subject's result in a semester (it goes back to being planned). */
+export function removeResult(student: StudentData, code: string, term: Term): StudentData {
+  return setAttempts(student, code, attemptsFor(student, code).filter((a) => termIndex(a) !== termIndex(term)))
 }

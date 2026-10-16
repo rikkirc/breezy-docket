@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import App from './App'
-import { demoStudent } from './data'
+import { demoStudent, jdCurriculum } from './data'
 
 beforeEach(() => localStorage.clear())
 afterEach(() => {
@@ -16,12 +16,27 @@ function tab(name: string) {
   return within(screen.getByRole('navigation', { name: 'Sections' })).getByRole('button', { name })
 }
 
-function whatIfGraduation() {
-  return screen.getByText('What-if graduation').parentElement!
+function graduation() {
+  return screen.getByText('Expected graduation').parentElement!
 }
 
-function graduation() {
-  return screen.getByText('Earliest graduation').parentElement!
+/** A semester card on Working Subjects. */
+function semester(name: string) {
+  return screen.getByRole('listitem', { name })
+}
+
+/** Passed all of Year 1 and Year 2, 1st sem except a failed 214, on the JD curriculum with the full-load cap. */
+function saveFailed214() {
+  const subjects = jdCurriculum.subjects.filter((s) => s.standard_year === 1 || (s.standard_year === 2 && s.offered_sem === 1))
+  const results = subjects.map((s) => ({
+    code: s.code,
+    attempts: [{ year: s.standard_year, sem: s.offered_sem, result: s.code === '214' ? 'Failed' : 'Passed' }],
+  }))
+  const student = { unit_caps: { default: 12, full_load: true }, next_term: { year: 1, sem: 1 }, results }
+  localStorage.setItem(
+    'curriculum-organizer:v1',
+    JSON.stringify({ curriculum: jdCurriculum, student, isDemo: false, setupDone: true }),
+  )
 }
 
 function section(name: string) {
@@ -79,13 +94,15 @@ describe('setup: building the curriculum', () => {
 
     await user.click(screen.getByRole('button', { name: 'Next: Review' }))
     expect(screen.getByText('Your default plan').parentElement).toHaveTextContent('Year 1, 2nd sem')
+    // The review shows each prerequisite's full title, not just its code
+    expect(screen.getByRole('list', { name: 'Prerequisites of LAW2' })).toHaveTextContent('LAW1 Contracts')
     expect(screen.getByText(/2 subjects, 4 units/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Done: go to Working Subjects' }))
     expect(screen.getByRole('heading', { name: 'Working Subjects' })).toBeInTheDocument()
-    await user.click(tab('Plan'))
+    expect(screen.queryByRole('button', { name: 'Plan' })).not.toBeInTheDocument()
     expect(within(graduation()).getByText('Year 1, 2nd sem')).toBeInTheDocument()
-    expect(within(graduation()).getByText('On schedule with the standard plan.')).toBeInTheDocument()
+    expect(within(graduation()).getByText(/On schedule with the standard plan/)).toBeInTheDocument()
   })
 
   test('a subject code must be unique', async () => {
@@ -112,8 +129,9 @@ describe('setup: building the curriculum', () => {
     await user.clear(cap)
     await user.type(cap, '21')
     await user.click(screen.getByRole('button', { name: 'Done: go to Working Subjects' }))
-    await user.click(tab('Plan'))
     expect(within(graduation()).getByText('Year 4, 2nd sem')).toBeInTheDocument()
+    // The subjects are the curriculum's, with no notes from the sample's source
+    expect(screen.queryByText(/To confirm/)).not.toBeInTheDocument()
   })
 
   test('the Default cap follows each semester\'s full load', async () => {
@@ -125,70 +143,78 @@ describe('setup: building the curriculum', () => {
     await user.click(screen.getByRole('radio', { name: /Default/ }))
     expect(screen.queryByRole('spinbutton', { name: 'Units per semester' })).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Done: go to Working Subjects' }))
-    await user.click(tab('Plan'))
     expect(within(graduation()).getByText('Year 4, 2nd sem')).toBeInTheDocument()
     expect(within(screen.getByRole('group', { name: 'Unit cap for Year 1, 1st sem' })).getByText('18 / 18 units')).toBeInTheDocument()
     expect(within(screen.getByRole('group', { name: 'Unit cap for Year 1, 2nd sem' })).getByText('16 / 16 units')).toBeInTheDocument()
   })
 })
 
-describe('the demo student', () => {
-  test('graduation, terms and delay reasons', async () => {
+describe('working subjects', () => {
+  test('the demo: past semesters with results, the current one, and what moved', async () => {
     const user = userEvent.setup()
     await openDemo(user)
     expect(screen.getByText(/made-up demo student/)).toBeInTheDocument()
     expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
     expect(within(graduation()).getByText(/1 year behind the standard plan \(Year 4, 2nd sem\)/)).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Year 3, 1st sem' })).toBeInTheDocument()
-    expect(screen.getByText(/Needs 214 Corporation and Basic Securities Law passed first/)).toBeInTheDocument()
-    expect(screen.queryByText(/\d u$/)).not.toBeInTheDocument()
+    expect(within(semester('Year 2, 1st sem')).getByRole('button', { name: /214 Corporation and Basic Securities Law: Failed/ })).toBeInTheDocument()
+    expect(within(semester('Year 3, 1st sem')).getByText('Now')).toBeInTheDocument()
+    expect(within(semester('Year 3, 1st sem')).getByText('Moved from Year 2, 1st sem')).toBeInTheDocument()
+    expect(within(semester('Year 4, 1st sem')).getByText(/Needs 214 Corporation and Basic Securities Law passed first/)).toBeInTheDocument()
   })
 
-  test('raising a term cap re-plans', async () => {
+  test('failing a subject moves it to its next offering, and what needs it moves too', async () => {
+    const user = userEvent.setup()
+    await openDemo(user)
+    await user.click(within(screen.getByRole('group', { name: 'Result for 214' })).getByRole('button', { name: 'Failed' }))
+    expect(within(graduation()).getByText('Year 6, 2nd sem')).toBeInTheDocument()
+    expect(within(semester('Year 3, 1st sem')).getByRole('button', { name: /214 .*: Failed/ })).toBeInTheDocument()
+    expect(within(semester('Year 4, 1st sem')).getByText('Corporation and Basic Securities Law')).toBeInTheDocument()
+    expect(within(semester('Year 5, 1st sem')).getByText('Commercial Laws I')).toBeInTheDocument()
+  })
+
+  test('marking the semester passed moves on to the next one; a result can be changed', async () => {
+    const user = userEvent.setup()
+    await openDemo(user)
+    await user.click(within(semester('Year 3, 1st sem')).getByRole('button', { name: 'Mark all passed' }))
+    expect(within(semester('Year 3, 2nd sem')).getByText('Now')).toBeInTheDocument()
+    expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
+
+    await user.click(within(semester('Year 3, 1st sem')).getByRole('button', { name: /214 .*: Passed/ }))
+    await user.click(within(semester('Year 3, 1st sem')).getByRole('button', { name: 'Failed' }))
+    expect(within(semester('Year 3, 1st sem')).getByRole('button', { name: /214 .*: Failed/ })).toBeInTheDocument()
+  })
+
+  test('raising a semester cap re-plans', async () => {
     const user = userEvent.setup()
     await openDemo(user)
     const cap = screen.getByRole('group', { name: 'Unit cap for Year 3, 1st sem' })
     expect(within(cap).getByText('12 / 12 units')).toBeInTheDocument()
     await user.click(within(cap).getByRole('button', { name: 'Raise the cap' }))
-    expect(
-      within(screen.getByRole('group', { name: 'Unit cap for Year 3, 1st sem' })).getByText(/\/ 13 units/),
-    ).toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Unit cap for Year 3, 1st sem' })).getByText('13 / 13 units')).toBeInTheDocument()
   })
 
-  test("taking a semester's subjects, then marking a result", async () => {
+  test('on full load, a semester pushed over it asks how many units to take', async () => {
+    saveFailed214()
     const user = userEvent.setup()
-    await openDemo(user)
-    await user.click(screen.getByRole('button', { name: "I'm taking these now" }))
-    expect(screen.getByRole('heading', { name: 'Taking now · Year 3, 1st sem' })).toBeInTheDocument()
-    expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
-
-    await user.click(within(screen.getByRole('group', { name: 'Result for 214' })).getByRole('button', { name: 'Failed' }))
-    expect(within(graduation()).getByText('Year 6, 2nd sem')).toBeInTheDocument()
-    await user.click(tab('Working Subjects'))
-    expect(screen.getByRole('button', { name: /Corporation and Basic Securities Law/ })).toHaveTextContent('Failed')
+    render(<App />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Year 4, 1st sem now has 20 units of subjects, more than its full load of 17.')
+    await user.click(screen.getByRole('button', { name: 'Year 4, 1st sem only' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Unit cap for Year 4, 1st sem' })).getByText('20 / 20 units')).toBeInTheDocument()
   })
 
-  test('what-if: failing 214 again shows a later date without saving it', async () => {
+  test('the prompt can set a cap for every semester from now on', async () => {
+    saveFailed214()
     const user = userEvent.setup()
-    await openDemo(user)
-    await user.click(screen.getByText('What if…'))
-    await user.selectOptions(screen.getByRole('combobox', { name: /I fail this sem/ }), '214')
-    expect(within(whatIfGraduation()).getByText('Year 6, 2nd sem')).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('1 year later than your plan (Year 5, 2nd sem)')
-    expect(screen.queryByRole('button', { name: 'Raise the cap' })).not.toBeInTheDocument()
-    expect(localStorage.getItem('curriculum-organizer:v1')).not.toContain('"year":3,"sem":1,"result":"Failed"')
-
-    await user.click(screen.getByRole('button', { name: 'Back to my plan' }))
-    expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
-  })
-
-  test('what-if: a different unit load', async () => {
-    const user = userEvent.setup()
-    await openDemo(user)
-    await user.click(screen.getByText('What if…'))
-    await user.selectOptions(screen.getByRole('combobox', { name: /units every sem/ }), '9')
-    expect(within(whatIfGraduation()).getByText('Year 6, 2nd sem')).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent('1 year later than your plan')
+    render(<App />)
+    const input = screen.getByRole('spinbutton', { name: 'Units to take' })
+    await user.clear(input)
+    await user.type(input, '15')
+    await user.click(screen.getByRole('button', { name: 'Every semester from now on' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Unit cap for Year 3, 1st sem' })).getByText(/\/ 15 units/)).toBeInTheDocument()
+    await user.click(tab('Settings'))
+    expect(screen.getByRole('radio', { name: /Custom/ })).toBeChecked()
   })
 
   test('renaming a subject on the Curriculum tab keeps its results', async () => {
@@ -201,7 +227,7 @@ describe('the demo student', () => {
     await user.type(code, 'CIV101')
     await user.click(within(section('Year 1, 1st sem')).getByRole('button', { name: 'Save' }))
     await user.click(tab('Working Subjects'))
-    expect(screen.getByRole('button', { name: /CIV101 Persons and Family Law/ })).toHaveTextContent('Passed')
+    expect(within(semester('Year 1, 1st sem')).getByRole('button', { name: /CIV101 Persons and Family Law: Passed/ })).toBeInTheDocument()
   })
 })
 
@@ -211,8 +237,7 @@ describe('results and data', () => {
     await openDemo(user)
     await user.click(tab('Settings'))
     await user.click(screen.getByRole('radio', { name: /Default/ }))
-    await user.click(tab('Plan'))
-    // Year 3, 1st sem's full load is 16 units; with 214 still owed, the plan can use them all
+    await user.click(tab('Working Subjects'))
     expect(within(screen.getByRole('group', { name: 'Unit cap for Year 3, 1st sem' })).getByText(/\/ 16 units/)).toBeInTheDocument()
   })
 
@@ -220,23 +245,15 @@ describe('results and data', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     const user = userEvent.setup()
     await openDemo(user)
-
     await user.click(tab('Settings'))
     await user.click(screen.getByRole('button', { name: 'Clear my results' }))
     expect(screen.queryByText(/made-up demo student/)).not.toBeInTheDocument()
 
-    // Lands on Results: pass all of Year 1, 1st sem in one tap, and fail Criminal Law II.
-    const firstSem = screen.getByRole('heading', { name: 'Year 1, 1st sem' }).closest('.group') as HTMLElement
-    await user.click(within(firstSem).getByRole('button', { name: 'Mark the rest passed' }))
-    await user.click(screen.getByRole('button', { name: /Criminal Law II/ }))
-    await user.click(screen.getByRole('button', { name: 'Failed' }))
-    expect(screen.getByRole('button', { name: /Criminal Law II/ })).toHaveTextContent('Failed')
-
-    await user.click(tab('Plan'))
-    expect(screen.getByText(/the plan starts at Year 1, 1st sem/)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Plan from Year 2, 1st sem' }))
-    expect(screen.queryByText(/the plan starts at/)).not.toBeInTheDocument()
-    expect(screen.getByText(/Failed in Year 1, 2nd sem/)).toBeInTheDocument()
+    await user.click(within(semester('Year 1, 1st sem')).getByRole('button', { name: 'Mark all passed' }))
+    expect(within(semester('Year 1, 2nd sem')).getByText('Now')).toBeInTheDocument()
+    await user.click(within(screen.getByRole('group', { name: 'Result for 111' })).getByRole('button', { name: 'Failed' }))
+    expect(within(semester('Year 2, 2nd sem')).getByText('Obligations and Contracts')).toBeInTheDocument()
+    expect(within(semester('Year 2, 2nd sem')).getByText(/Failed in Year 1, 2nd sem/)).toBeInTheDocument()
   })
 
   test('start over goes back to setup with an empty curriculum', async () => {

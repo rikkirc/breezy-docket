@@ -192,3 +192,70 @@ describe('the Default cap (full load of each semester)', () => {
     expect(capFor(curriculum, student, { year: 1, sem: 2 })).toBe(16)
   })
 })
+
+describe('working semester by semester', () => {
+  /** Passed everything in Year 1 and Year 2, 1st sem, except a failed 214. */
+  function failed214(): StudentData {
+    const results = curriculum.subjects
+      .filter((s) => s.standard_year === 1 || (s.standard_year === 2 && s.offered_sem === 1))
+      .map((s) => ({
+        code: s.code,
+        attempts: [{ year: s.standard_year, sem: s.offered_sem, result: s.code === '214' ? ('Failed' as const) : ('Passed' as const) }],
+      }))
+    return { unit_caps: { default: 12, full_load: true }, next_term: { year: 1, sem: 1 }, results }
+  }
+  const termOf = (plan: Plan, code: string) =>
+    plan.terms.find((t) => t.subjects.some((s) => s.code === code))?.term
+
+  test('no subject is planned before its semester in the curriculum', () => {
+    for (const student of [freshStudent(21), freshStudent(30), demo]) {
+      const plan = planCurriculum(curriculum, student)
+      for (const t of plan.terms) {
+        for (const s of t.subjects) {
+          const subject = curriculum.subjects.find((x) => x.code === s.code)!
+          expect(termIndex(t.term), s.code).toBeGreaterThanOrEqual(termIndex({ year: subject.standard_year, sem: subject.offered_sem }))
+        }
+      }
+    }
+  })
+
+  test('a failed subject moves to its next offering, and the subjects that need it move after it', () => {
+    const plan = planCurriculum(curriculum, failed214())
+    expect(termOf(plan, '214')).toEqual({ year: 3, sem: 1 })
+    expect(termOf(plan, '305')).toEqual({ year: 4, sem: 1 })
+    expect(termOf(plan, '312')).toEqual({ year: 4, sem: 2 })
+    expect(termOf(plan, '401.2')).toEqual({ year: 5, sem: 2 })
+    // Subjects that don't depend on 214 stay where the curriculum puts them
+    expect(termOf(plan, '303')).toEqual({ year: 3, sem: 1 })
+    expect(termOf(plan, '211')).toEqual({ year: 2, sem: 2 })
+  })
+
+  test('on the full-load cap, a semester pushed over its full load is reported until a cap is chosen', () => {
+    const student = failed214()
+    expect(planCurriculum(curriculum, student).overloads).toEqual([{ term: { year: 4, sem: 1 }, units: 20, cap: 17 }])
+
+    const chosen = { ...student, unit_caps: { ...student.unit_caps, by_term: { 'Y4-1': 20 } } }
+    const plan = planCurriculum(curriculum, chosen)
+    expect(plan.overloads).toEqual([])
+    expect(plan.terms.find((t) => t.term.year === 4 && t.term.sem === 1)?.units).toBe(20)
+    expect(plan.graduation).toEqual({ year: 5, sem: 2 })
+  })
+
+  test('the semester in progress keeps its unrecorded subjects and counts the recorded ones', () => {
+    // 214 failed in Year 3, 1st sem; nothing else recorded there yet
+    const student: StudentData = {
+      ...demo,
+      results: [
+        ...demo.results.filter((r) => r.code !== '214'),
+        { code: '214', attempts: [{ year: 2, sem: 1, result: 'Failed' }, { year: 3, sem: 1, result: 'Failed' }] },
+      ],
+    }
+    const plan = planCurriculum(curriculum, student)
+    const current = plan.terms[0]
+    expect(current.term).toEqual({ year: 3, sem: 1 })
+    expect(current.subjects.map((s) => s.code)).not.toContain('214')
+    expect(current.units).toBeLessThanOrEqual(12 - 3)
+    expect(termOf(plan, '214')).toEqual({ year: 4, sem: 1 })
+    expect(plan.delays.find((d) => d.code === '214')?.reasons).toContainEqual({ kind: 'failed', term: { year: 3, sem: 1 } })
+  })
+})

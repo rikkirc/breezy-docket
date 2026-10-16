@@ -1,5 +1,7 @@
 import { nextTerm, termFromIndex, termIndex, termKey, termLabel } from './terms'
 import type {
+  Attempt,
+  Overload,
   Curriculum,
   Delay,
   DelayReason,
@@ -35,6 +37,8 @@ export interface ChooserContext {
 
 export interface PlanOptions {
   chooser?: Chooser
+  /** Let subjects be planned before their standard term to fill spare units. Off in the app. */
+  allowEarly?: boolean
 }
 
 /** The cap for a term before any per-term override: the default number, or the term's full load. */
@@ -60,8 +64,24 @@ export function fullLoadFor(curriculum: Curriculum, term: Term): number {
 }
 
 /**
- * Plans every subject the student hasn't passed into future terms, starting at student.next_term.
- * Pure: the inputs are not changed, so a what-if is just a call with edited inputs.
+ * The semester planning starts in: student.next_term, or the latest semester with a recorded result if that
+ * is later (it is still in progress, so unrecorded subjects can still be planned into it).
+ */
+export function planStart(student: StudentData): Term {
+  let start = student.next_term
+  for (const record of student.results) {
+    for (const a of record.attempts) {
+      if (termIndex(a) > termIndex(start)) start = { year: a.year, sem: a.sem }
+    }
+  }
+  return start
+}
+
+/**
+ * Plans every subject the student hasn't passed into future terms. A subject stays in its standard term
+ * (its place in the curriculum) unless it can't be taken then: it was failed, a prerequisite isn't passed
+ * yet, or there's no room under the cap. Then it moves to the next term it's offered, and so do the
+ * subjects that need it. Pure: the inputs are not changed.
  */
 export function planCurriculum(
   curriculum: Curriculum,
@@ -71,41 +91,64 @@ export function planCurriculum(
   const chooser = options.chooser ?? chooseBest
   const subjects = new Map(curriculum.subjects.map((s) => [s.code, s]))
   const order = new Map(curriculum.subjects.map((s, i) => [s.code, i]))
+  const start = planStart(student)
+  const startIndex = termIndex(start)
 
+  // Results recorded before the start term are settled; those in the start term take up its units and
+  // count as passed only from the next term on.
   const passed = new Set<string>()
   const ongoing = new Set<string>()
+  const inStartTerm = new Map<string, Attempt[]>()
   for (const record of student.results) {
+    for (const a of record.attempts) {
+      if (termIndex(a) === startIndex) inStartTerm.set(record.code, [...(inStartTerm.get(record.code) ?? []), a])
+    }
     if (record.attempts.some((a) => a.result === 'Passed')) passed.add(record.code)
     else if (record.attempts.some((a) => a.result === 'Ongoing')) ongoing.add(record.code)
   }
 
   // Ongoing counts as passed for planning; dependents carry a warning instead.
-  const done = new Set([...passed, ...ongoing])
-  const remaining = curriculum.subjects.filter((s) => !done.has(s.code))
+  const settled = new Set([...passed, ...ongoing])
+  const done = new Set([...settled].filter((code) => !inStartTerm.has(code)))
+  const remaining = curriculum.subjects.filter((s) => !settled.has(s.code))
   const context: ChooserContext = { dependents: countDependents(remaining), order }
+  const recordedUnits = [...inStartTerm.keys()].reduce((n, code) => n + (subjects.get(code)?.units ?? 0), 0)
 
   const terms: PlannedTerm[] = []
+  const overloads: Overload[] = []
   const plannedIn = new Map<string, Term>()
   let open = [...remaining]
-  let term = student.next_term
+  let term = start
   let emptyStreak = 0
 
   while (open.length > 0 && emptyStreak < MAX_EMPTY_TERMS) {
+    const index = termIndex(term)
     const cap = capFor(curriculum, student, term)
+    const used = index === startIndex ? recordedUnits : 0
     const candidates = open.filter(
       (s) =>
         s.offered_sem === term.sem &&
+        (options.allowEarly || termIndex({ year: s.standard_year, sem: s.offered_sem }) <= index) &&
+        !(index === startIndex && inStartTerm.has(s.code)) &&
         s.units <= cap &&
         s.prerequisites.every((p) => done.has(p) || !subjects.has(p)),
     )
-    const chosen = chooser(candidates, cap, context).sort(
+    const due = used + sumUnits(candidates)
+    if (student.unit_caps.full_load && due > cap && student.unit_caps.by_term?.[termKey(term)] === undefined) {
+      overloads.push({ term, units: due, cap })
+    }
+    const chosen = chooser(candidates, Math.max(0, cap - used), context).sort(
       (a, b) => order.get(a.code)! - order.get(b.code)!,
     )
 
-    if (chosen.length === 0) {
-      emptyStreak++
+    if (chosen.length === 0 && index !== startIndex) {
+      // A term with nothing to take only counts as stuck when nothing is waiting for a later standard term.
+      const waiting = open.some((s) => termIndex({ year: s.standard_year, sem: s.offered_sem }) > index)
+      if (!waiting) emptyStreak++
     } else {
       emptyStreak = 0
+    }
+    if (chosen.length > 0) {
       terms.push({
         term,
         label: termLabel(term),
@@ -127,6 +170,7 @@ export function planCurriculum(
 
     // Subjects taken this term count as passed from the next term on.
     for (const s of chosen) done.add(s.code)
+    if (index === startIndex) for (const code of inStartTerm.keys()) if (settled.has(code)) done.add(code)
     term = nextTerm(term)
   }
 
@@ -140,7 +184,8 @@ export function planCurriculum(
     graduation,
     standardGraduation: standard,
     termsBehind: graduation && standard ? termIndex(graduation) - termIndex(standard) : null,
-    delays: findDelays(curriculum, student, terms, plannedIn),
+    delays: findDelays(curriculum, student, terms, plannedIn, start),
+    overloads,
     unplanned,
     ongoing: [...ongoing],
   }
@@ -229,6 +274,7 @@ function findDelays(
   student: StudentData,
   terms: PlannedTerm[],
   plannedIn: Map<string, Term>,
+  start: Term,
 ): Delay[] {
   const takenBy = new Map<string, number>()
   for (const t of terms) for (const s of t.subjects) takenBy.set(s.code, termIndex(t.term))
@@ -250,7 +296,7 @@ function findDelays(
     )
   }
 
-  const startIndex = termIndex(student.next_term)
+  const startIndex = termIndex(start)
   const delays: Delay[] = []
   for (const subject of curriculum.subjects) {
     const planned = plannedIn.get(subject.code)
@@ -263,10 +309,11 @@ function findDelays(
     const reasons: DelayReason[] = []
     for (let i = from; i < to; i++) {
       const term = termFromIndex(i)
-      if (i < startIndex) {
-        if (failedIn.get(subject.code)?.has(i)) reasons.push({ kind: 'failed', term })
+      if (failedIn.get(subject.code)?.has(i)) {
+        reasons.push({ kind: 'failed', term })
         continue
       }
+      if (i < startIndex) continue
       if (subject.offered_sem !== term.sem) {
         reasons.push({ kind: 'other_semester', term })
         continue

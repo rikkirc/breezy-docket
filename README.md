@@ -4,7 +4,7 @@ Plans the remaining subjects of a working student into future semesters under a 
 
 **Live demo:** https://rikkirc.github.io/curriculum-organizer/ (updates on every merge to `main`; opens on a phone too).
 
-**Status:** first-run setup builds the curriculum in 3 steps (subjects and units by semester → prerequisites → review the default plan), then: Working Subjects (results entry), "taking now" for the current semester, the plan by term, graduation date and delay reasons, what-if, JSON backup, installable on a phone (works offline). Data stays in your browser.
+**Status:** first-run setup builds the curriculum in 3 steps (subjects and units by semester → prerequisites → review the default plan and unit cap). Then Working Subjects shows every semester: record results as you go, and failed subjects plus everything that needs them move to their next offering automatically, with the expected graduation on top. JSON backup; installable on a phone (works offline). Data stays in your browser.
 
 ## Run it
 
@@ -22,7 +22,7 @@ npm run dev       # the app at http://localhost:5173
   - `planCurriculum(curriculum, student)` returns the plan by term, graduation term, terms behind the standard plan, and why each delayed subject is delayed.
   - `planner.test.ts` — the acceptance tests.
   - `naive.ts` — the simple standard-order fill the spec rejects, kept for the regression test.
-- `src/components/` — the setup steps (Subjects, Prerequisites, Review) and the Plan, Results, Curriculum and Settings screens.
-- `src/lib/` — edits on the curriculum and the student's data, what-if scenarios, backup export/import, saving to localStorage.
+- `src/components/` — the setup steps (Subjects, Prerequisites, Review) and the Working Subjects, Curriculum and Settings screens.
+- `src/lib/` — edits on the curriculum and the student's data, backup export/import, saving to localStorage.
 - `public/` — the app manifest, icons and the offline service worker (`sw.js`).
 - `.github/workflows/` — `tests.yml` (every push) and `deploy.yml` (GitHub Pages on merge to `main`).

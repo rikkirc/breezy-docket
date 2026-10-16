@@ -2,15 +2,25 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-15) — student-built curriculum
+## Current state (2026-10-16) — Working Subjects is the main screen
 
 - **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
-- **Flow:** (1) enter every subject and its units by semester, Year 1 to graduation; (2) tick each subject's prerequisites; (3) review the default plan and set the unit cap; (4) record results as you go ("I'm taking these now", then Passed / Failed); (5) the planner re-plans the rest.
-- **Screens:** setup (3 steps), Plan (graduation, taking now, terms with − / + cap, delay reasons, what-if), Working Subjects, Curriculum (edit subjects, prerequisites, default plan any time), Settings (plan-from term, cap, install, backup, clear results / start over / demo).
+- **Flow:** (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
+- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units per semester; finished ones folded; the current one with Passed / Failed / Taking; what moved and why; a prompt when a full-load semester is pushed over its load), Curriculum, Settings.
 - **Data:** curriculum and results stay in the browser (localStorage); backups include the curriculum.
-- **Tests:** 78 — planner (20), data edits and wording (9), curriculum edits (10), what-if (8), backup (13), screens in jsdom (18). CI runs lint, type check, tests and build on every push.
+- **Tests:** 73 — planner (24), data edits and wording (7), curriculum edits and recording (10), backup (13), screens in jsdom (19). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 (later) — Working Subjects replaces the Plan
+- The Plan tab and what-if are gone. Working Subjects now shows every semester: finished ones fold to one line ("18 units · 6 passed"), the current one has Passed / Failed / Taking per subject and "Mark all passed", later ones show what's planned. Tap a recorded result to change or remove it.
+- Expected graduation and units passed moved to the top of Working Subjects.
+- Planning keeps each subject in its semester from the curriculum; it never pulls a subject earlier. A failed subject goes to the next semester it's offered, and every subject that needs it moves to its next offering after that ("Moved from Year 3, 1st sem: Needs 214 … passed first").
+- Each semester shows its units against its cap, with − / + to change it.
+- On the Default (full load) cap, when moved subjects push a semester over its full load, a prompt asks how many units to take: for that semester only, or every semester from now on.
+- The semester in progress is the latest one with a recorded result (or the plan-from term in Settings, if later); unrecorded subjects in it stay planned there.
+- Review shows each prerequisite's full title. The sample JD curriculum no longer carries "To confirm" notes; subjects come only from the student's curriculum.
+- SPEC.md still lists what-if; it was removed at the user's request (see above).
 
 ### 2026-10-16 — chips, Working Subjects, Default cap
 - Prerequisites show as boxed chips, each with an × to remove it (Prerequisites step and Curriculum tab). The Default plan review shows them as boxes too, without ×.
@@ -66,7 +76,7 @@ What's done, what's next, and what's blocked. Newest entries first.
 - [ ] Try it on a real phone after the first deploy.
 
 ### Milestone 3
-- [x] What-if ("fail X this sem", "take 15 units") without saving.
+- [x] What-if ("fail X this sem", "take 15 units") without saving. (Removed later with the Plan tab.)
 - [x] Export / import JSON backup.
 - [x] PWA install.
 - [ ] Install on a real iPhone and Android phone; check it opens offline.

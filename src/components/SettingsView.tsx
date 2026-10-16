@@ -14,7 +14,7 @@ interface Props {
   onChange: (student: StudentData) => void
   curriculum: Curriculum
   /** Replaces everything (curriculum, results, settings), then shows the given tab. */
-  onReplace: (saved: Saved, show?: 'plan' | 'results') => void
+  onReplace: (saved: Saved, show?: 'working') => void
 }
 
 export function SettingsView({ curriculum, student, isDemo, onChange, onReplace }: Props) {
@@ -46,7 +46,7 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
       // Version 1 backups were made with the JD curriculum, the only one the app had then.
       onReplace(
         { curriculum: imported.curriculum ?? jdCurriculum, student: imported.student, isDemo: false, setupDone: true },
-        'plan',
+        'working',
       )
     } catch (error) {
       setImportError(error instanceof Error ? error.message : String(error))
@@ -181,7 +181,7 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
                 const fresh = freshStudent()
                 onReplace(
                   { curriculum, student: { ...fresh, unit_caps: { default: student.unit_caps.default } }, isDemo: false, setupDone: true },
-                  'results',
+                  'working',
                 )
               }
             }}
@@ -204,7 +204,7 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
               type="button"
               onClick={() => {
                 if (window.confirm('Replace your data with the demo student? Your curriculum and results will be lost.')) {
-                  onReplace(demoSaved(), 'plan')
+                  onReplace(demoSaved(), 'working')
                 }
               }}
             >

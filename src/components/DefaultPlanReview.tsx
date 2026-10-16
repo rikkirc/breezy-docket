@@ -1,3 +1,4 @@
+import { subjectMap } from '../data'
 import { curriculumProblems, formatUnits, termsWithSubjects, totalUnits } from '../lib/curriculum'
 import { standardGraduation, termIndex, termLabel, type Curriculum } from '../planner'
 
@@ -6,6 +7,7 @@ export function DefaultPlanReview({ curriculum }: { curriculum: Curriculum }) {
   const graduation = standardGraduation(curriculum)
   const problems = curriculumProblems(curriculum)
   const terms = termsWithSubjects(curriculum).filter((t) => t.subjects.length > 0)
+  const byCode = subjectMap(curriculum)
 
   return (
     <div className="review">
@@ -47,7 +49,9 @@ export function DefaultPlanReview({ curriculum }: { curriculum: Curriculum }) {
                   <ul className="chips" aria-label={`Prerequisites of ${s.code}`}>
                     {s.prerequisites.map((p) => (
                       <li key={p} className="chip">
-                        <span className="chip-code">{p}</span>
+                        <span>
+                          <span className="chip-code">{p}</span> {byCode.get(p)?.title ?? ''}
+                        </span>
                       </li>
                     ))}
                   </ul>

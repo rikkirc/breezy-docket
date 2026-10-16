@@ -185,7 +185,6 @@ export function cleanCurriculum(curriculum: Curriculum): Curriculum {
       standard_year: s.standard_year,
       offered_sem: s.offered_sem,
       prerequisites: [...s.prerequisites],
-      ...(s.check ? { check: s.check } : {}),
     })),
   }
 }

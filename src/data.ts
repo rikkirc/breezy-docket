@@ -3,7 +3,18 @@ import demoJson from '../data/demo-student.json'
 import type { Curriculum, StudentData, Subject } from './planner'
 
 /** The sample JD curriculum: a starting point the student can load and edit, and the demo's curriculum. */
-export const jdCurriculum = curriculumJson as Curriculum
+export const jdCurriculum: Curriculum = {
+  program: { name: curriculumJson.program.name },
+  // The JSON's `check` notes are for confirming the sample against the official curriculum, not for students.
+  subjects: (curriculumJson as Curriculum).subjects.map((s) => ({
+    code: s.code,
+    title: s.title,
+    units: s.units,
+    standard_year: s.standard_year,
+    offered_sem: s.offered_sem,
+    prerequisites: s.prerequisites,
+  })),
+}
 export const demoStudent = demoJson as StudentData
 
 export function subjectMap(curriculum: Curriculum): ReadonlyMap<string, Subject> {

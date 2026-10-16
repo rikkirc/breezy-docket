@@ -49,7 +49,7 @@ export function Setup({ workspace, onChange, onFinish, onTryDemo }: Props) {
               <div className="row">
                 <button
                   type="button"
-                  onClick={() => onChange({ ...workspace, curriculum: { ...jdCurriculum, program: { name: jdCurriculum.program.name } } })}
+                  onClick={() => onChange({ ...workspace, curriculum: jdCurriculum })}
                 >
                   Use the sample JD curriculum
                 </button>
