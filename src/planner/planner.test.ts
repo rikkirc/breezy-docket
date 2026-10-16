@@ -259,3 +259,15 @@ describe('working semester by semester', () => {
     expect(plan.delays.find((d) => d.code === '214')?.reasons).toContainEqual({ kind: 'failed', term: { year: 3, sem: 1 } })
   })
 })
+
+describe('choosing not to take a subject this sem', () => {
+  test('the subject waits for its next offering, and the subjects that need it wait too', () => {
+    const plan = planCurriculum(curriculum, { ...demo, not_before: { '304': 'Y4-1' } })
+    const termOf = (code: string) => plan.terms.find((t) => t.subjects.some((s) => s.code === code))?.term
+    expect(termOf('304')).toEqual({ year: 4, sem: 1 })
+    expect(termOf('314')).toEqual({ year: 4, sem: 2 })
+    expect(termIndex(termOf('412.1')!)).toBeGreaterThanOrEqual(termIndex({ year: 5, sem: 1 }))
+    expect(plan.delays.find((d) => d.code === '304')?.reasons).toContainEqual({ kind: 'postponed', term: { year: 3, sem: 1 } })
+    expect(ruleViolations(plan, demo)).toEqual([])
+  })
+})

@@ -26,14 +26,6 @@ export function setAttempts(student: StudentData, code: string, attempts: Attemp
   return { ...student, results }
 }
 
-/** Sets one term's cap. `base` is what the term gets without an override; matching it removes the override. */
-export function setCap(student: StudentData, term: Term, cap: number, base: number): StudentData {
-  const byTerm = { ...student.unit_caps.by_term }
-  if (cap === base) delete byTerm[termKey(term)]
-  else byTerm[termKey(term)] = cap
-  return { ...student, unit_caps: { ...student.unit_caps, by_term: byTerm } }
-}
-
 /** Switches between a fixed cap every semester and the "default" cap: each semester's full load. */
 export function setCapMode(student: StudentData, fullLoad: boolean, cap = student.unit_caps.default): StudentData {
   const { full_load: _, ...rest } = student.unit_caps
@@ -55,6 +47,7 @@ export function describeDelay(delay: Delay, subjects: ReadonlyMap<string, Subjec
     delay.reasons.filter((r): r is Extract<Delay['reasons'][number], { kind: K }> => r.kind === kind)
 
   for (const r of of('failed')) lines.push(`Failed in ${termLabel(r.term)}.`)
+  for (const r of of('postponed')) lines.push(`You chose not to take it in ${termLabel(r.term)}.`)
 
   const prereqs = of('prerequisite')
   if (prereqs.length > 0) {
@@ -104,4 +97,20 @@ export function recordResult(student: StudentData, code: string, term: Term, res
 /** Removes a subject's result in a semester (it goes back to being planned). */
 export function removeResult(student: StudentData, code: string, term: Term): StudentData {
   return setAttempts(student, code, attemptsFor(student, code).filter((a) => termIndex(a) !== termIndex(term)))
+}
+
+/**
+ * "Not this sem": the subject (offered in `term`'s semester) is planned no earlier than the next time it's
+ * offered, a year later. Subjects that need it move with it through the usual prerequisite rules.
+ */
+export function postpone(student: StudentData, code: string, term: Term): StudentData {
+  const until = termKey({ year: term.year + 1, sem: term.sem })
+  return { ...student, not_before: { ...student.not_before, [code]: until } }
+}
+
+/** Undoes "Not this sem". */
+export function undoPostpone(student: StudentData, code: string): StudentData {
+  const notBefore = { ...student.not_before }
+  delete notBefore[code]
+  return { ...student, not_before: notBefore }
 }

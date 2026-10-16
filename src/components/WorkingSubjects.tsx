@@ -7,13 +7,12 @@ import {
   describeGap,
   recordResult,
   removeResult,
-  setCap,
+  postpone,
   setCapMode,
+  undoPostpone,
   statusOf,
 } from '../lib/student'
 import {
-  baseCapFor,
-  capFor,
   parseTermKey,
   planStart,
   termFromIndex,
@@ -59,6 +58,12 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
     }
   }
   const planned = new Map(plan.terms.map((t) => [termIndex(t.term), t]))
+  // Each semester's load in the curriculum, fixed: what the student takes is shown against it.
+  const loads = new Map<number, number>()
+  for (const s of curriculum.subjects) {
+    const i = termIndex({ year: s.standard_year, sem: s.offered_sem })
+    loads.set(i, (loads.get(i) ?? 0) + s.units)
+  }
   const current = plan.terms[0] ? termIndex(plan.terms[0].term) : null
 
   const indexes = [...recorded.keys(), ...planned.keys()]
@@ -91,7 +96,6 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
           const isPast = i < termIndex(start) || (next === undefined && (current === null || i < current))
           const isCurrent = i === current
           const units = done.reduce((n, d) => n + d.subject.units, 0) + (next?.units ?? 0)
-          const cap = capFor(curriculum, student, term)
           const recordedRows = done.map(({ subject, attempt }) => (
             <RecordedRow
               key={`${subject.code}-done`}
@@ -114,7 +118,7 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                   <summary className="term-head">
                     <h3>{label}</h3>
                     <span className="cap-text">
-                      {formatUnits(units)} · {counts.join(', ')}
+                      {unitsOf(units, loads.get(i))} · {counts.join(', ')}
                     </span>
                   </summary>
                   <ul className="subjects">{recordedRows}</ul>
@@ -129,12 +133,9 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                   {label}
                   {isCurrent && <span className="badge badge-ongoing tag">Now</span>}
                 </h3>
-                <CapStepper
-                  label={label}
-                  units={units}
-                  cap={cap}
-                  onChange={(n) => onChange(setCap(student, term, n, baseCapFor(curriculum, student, term)))}
-                />
+                <span className="cap-text" aria-label={`Units for ${label}`}>
+                  {unitsOf(units, loads.get(i))}
+                </span>
               </div>
               <ul className="subjects">
                 {recordedRows}
@@ -155,6 +156,11 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                               <li key={line}>{line}</li>
                             ))}
                           </ul>
+                          {student.not_before?.[s.code] && (
+                            <button type="button" className="link small-text" onClick={() => onChange(undoPostpone(student, s.code))}>
+                              Undo: take it in {termLabel(delay.standardTerm)} after all
+                            </button>
+                          )}
                         </div>
                       )}
                       {isCurrent && (
@@ -164,6 +170,14 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                               {RESULT_LABEL[r]}
                             </button>
                           ))}
+                          <button
+                            type="button"
+                            className="small"
+                            aria-label={`Not this sem: move ${s.code} to ${termLabel({ year: term.year + 1, sem: term.sem })}`}
+                            onClick={() => onChange(postpone(student, s.code, term))}
+                          >
+                            Not this sem
+                          </button>
                         </div>
                       )}
                     </li>
@@ -331,18 +345,7 @@ function Graduation({ plan, passedUnits, totalUnits }: { plan: Plan; passedUnits
   )
 }
 
-function CapStepper({ units, cap, onChange, label }: { units: number; cap: number; onChange: (cap: number) => void; label: string }) {
-  return (
-    <div className="cap" role="group" aria-label={`Unit cap for ${label}`}>
-      <span className="cap-text">
-        {units} / {cap} units
-      </span>
-      <button type="button" aria-label="Lower the cap" onClick={() => onChange(cap - 1)} disabled={cap <= 1}>
-        −
-      </button>
-      <button type="button" aria-label="Raise the cap" onClick={() => onChange(cap + 1)} disabled={cap >= 30}>
-        +
-      </button>
-    </div>
-  )
+/** "12 of 16 units" against the curriculum's load for the semester, or "3 units" past the standard plan. */
+function unitsOf(units: number, load: number | undefined): string {
+  return load === undefined ? formatUnits(units) : `${units} of ${formatUnits(load)}`
 }
