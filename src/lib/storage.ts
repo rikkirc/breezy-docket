@@ -1,7 +1,7 @@
 // The student's data stays in this browser (localStorage), never on a server: grades are personal data.
 import { demoStudent, jdCurriculum } from '../data'
 import type { Curriculum, StudentData } from '../planner'
-import { studentProblem } from './backup'
+import { placedOf, studentProblem } from './backup'
 import { curriculumProblem, emptyCurriculum } from './curriculum'
 import { freshStudent } from './student'
 
@@ -43,13 +43,16 @@ export function fromStored(value: unknown): Saved | null {
   if (typeof value !== 'object' || value === null) return null
   const stored = value as Partial<Saved>
   if (typeof stored.isDemo !== 'boolean' || studentProblem(stored.student) !== null) return null
+  const placed = placedOf(stored.student!)
+  const { not_before: _, ...rest } = stored.student as StudentData & { not_before?: unknown }
+  const student: StudentData = { ...rest, ...(placed ? { placed } : {}) }
   if (stored.curriculum === undefined) {
-    return { curriculum: jdCurriculum, student: stored.student!, isDemo: stored.isDemo, setupDone: true }
+    return { curriculum: jdCurriculum, student, isDemo: stored.isDemo, setupDone: true }
   }
   if (curriculumProblem(stored.curriculum) !== null) return null
   return {
     curriculum: stored.curriculum,
-    student: stored.student!,
+    student,
     isDemo: stored.isDemo,
     setupDone: stored.setupDone !== false,
   }

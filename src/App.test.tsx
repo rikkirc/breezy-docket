@@ -158,6 +158,9 @@ describe('working subjects', () => {
   test('the demo: past semesters with results, the current one, and what moved', async () => {
     const user = userEvent.setup()
     await openDemo(user)
+    const tabs = within(screen.getByRole('navigation', { name: 'Sections' })).getAllByRole('button')
+    expect(tabs.map((t) => t.textContent)).toEqual(['Settings', 'Curriculum', 'Working Subjects'])
+    expect(tabs[2]).toHaveAttribute('aria-current', 'page')
     expect(screen.getByText(/made-up demo student/)).toBeInTheDocument()
     expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
     expect(within(graduation()).getByText(/1 year behind the standard plan \(Year 4, 2nd sem\)/)).toBeInTheDocument()
@@ -210,32 +213,49 @@ describe('working subjects', () => {
     expect(within(semester('Year 3, 2nd sem')).queryByText('Special Rules and Proceedings')).not.toBeInTheDocument()
     expect(within(semester('Year 4, 2nd sem')).getByText('Special Rules and Proceedings')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Undo: take it in Year 3, 1st sem after all' }))
+    await user.click(screen.getByRole('button', { name: 'Undo the move of 304' }))
     expect(within(semester('Year 3, 1st sem')).getByText('Basic Succession Law')).toBeInTheDocument()
   })
 
-  test('on full load, a semester pushed over it asks how many units to take', async () => {
+  test('on full load, subjects that no longer fit a semester move on without asking', () => {
     saveFailed214()
-    const user = userEvent.setup()
     render(<App />)
-    expect(screen.getByRole('alert')).toHaveTextContent('Year 4, 1st sem now has 20 units of subjects, more than its full load of 17.')
-    await user.click(screen.getByRole('button', { name: 'Year 4, 1st sem only' }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    expect(units('Year 4, 1st sem')).toHaveTextContent('20 of 17 units')
+    expect(screen.queryByText('Units to take')).not.toBeInTheDocument()
+    expect(units('Year 4, 1st sem')).toHaveTextContent(/^1[0-7] of 17 units$/)
   })
 
-  test('the prompt can set a cap for every semester from now on', async () => {
-    saveFailed214()
+  test('the semester with subjects marked Taking is the Now semester', async () => {
     const user = userEvent.setup()
-    render(<App />)
-    const input = screen.getByRole('spinbutton', { name: 'Units to take' })
-    await user.clear(input)
-    await user.type(input, '15')
-    await user.click(screen.getByRole('button', { name: 'Every semester from now on' }))
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    expect(units('Year 3, 1st sem')).toHaveTextContent('15 of 16 units')
-    await user.click(tab('Settings'))
-    expect(screen.getByRole('radio', { name: /Custom/ })).toBeChecked()
+    await openDemo(user)
+    for (const code of ['214', '301', '302', '304', '306', '307']) {
+      const group = screen.queryByRole('group', { name: `Result for ${code}` })
+      if (group) await user.click(within(group).getByRole('button', { name: 'Taking' }))
+    }
+    // Everything in Year 3, 1st sem is Taking: it stays Now instead of jumping to Year 3, 2nd sem
+    expect(within(semester('Year 3, 1st sem')).getByText('Now')).toBeInTheDocument()
+    expect(within(semester('Year 3, 2nd sem')).queryByText('Now')).not.toBeInTheDocument()
+    expect(within(semester('Year 3, 1st sem')).getByRole('button', { name: /214 .*: Taking/ })).toBeInTheDocument()
+  })
+
+  test('a later semester\'s subject can be moved to another semester, following prerequisites; undo restores it', async () => {
+    const user = userEvent.setup()
+    await openDemo(user)
+    // 404 Labor Law Review (Year 4, 2nd sem) needs 205 and 215, both passed: it can move up to Year 3, 2nd sem
+    await user.click(screen.getByRole('button', { name: 'Move 404 to another semester' }))
+    const targets = screen.getByRole('group', { name: 'Move 404 to' })
+    expect(within(targets).queryByRole('button', { name: 'Year 3, 1st sem' })).not.toBeInTheDocument()
+    await user.click(within(targets).getByRole('button', { name: 'Year 3, 2nd sem' }))
+    expect(within(semester('Year 3, 2nd sem')).getByText('Labor Law Review and Integration')).toBeInTheDocument()
+    expect(within(semester('Year 3, 2nd sem')).getByText(/You moved it here/)).toBeInTheDocument()
+
+    // 312 needs 305 (planned Year 4, 1st sem): Year 4, 2nd sem or later only
+    await user.click(screen.getByRole('button', { name: 'Move 312 to another semester' }))
+    expect(within(screen.getByRole('group', { name: 'Move 312 to' })).queryByRole('button', { name: 'Year 3, 2nd sem' })).not.toBeInTheDocument()
+    await user.click(within(screen.getByRole('group', { name: 'Move 312 to' })).getByRole('button', { name: 'Cancel' }))
+
+    await user.click(screen.getByRole('button', { name: 'Undo the move of 404' }))
+    expect(within(semester('Year 3, 2nd sem')).queryByText('Labor Law Review and Integration')).not.toBeInTheDocument()
   })
 
   test('renaming a subject on the Curriculum tab keeps its results', async () => {

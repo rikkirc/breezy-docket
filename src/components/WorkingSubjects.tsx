@@ -5,28 +5,26 @@ import {
   attemptsFor,
   describeDelay,
   describeGap,
+  moveTargets,
+  placeSubject,
+  postpone,
   recordResult,
   removeResult,
-  postpone,
-  setCapMode,
-  undoPostpone,
   statusOf,
+  unplace,
 } from '../lib/student'
 import {
-  parseTermKey,
   planStart,
+  type Term,
   termFromIndex,
   termIndex,
-  termKey,
   termLabel,
   type Attempt,
   type Curriculum,
-  type Overload,
   type Plan,
   type Result,
   type StudentData,
   type Subject,
-  type Term,
 } from '../planner'
 
 interface Props {
@@ -64,7 +62,9 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
     const i = termIndex({ year: s.standard_year, sem: s.offered_sem })
     loads.set(i, (loads.get(i) ?? 0) + s.units)
   }
-  const current = plan.terms[0] ? termIndex(plan.terms[0].term) : null
+  // "Now" is the semester with subjects marked Taking; with none, the first semester with planned subjects.
+  const taking = student.results.flatMap((r) => r.attempts.filter((a) => a.result === 'Ongoing').map(termIndex))
+  const current = taking.length > 0 ? Math.max(...taking) : plan.terms[0] ? termIndex(plan.terms[0].term) : null
 
   const indexes = [...recorded.keys(), ...planned.keys()]
   const last = indexes.length > 0 ? Math.max(...indexes) : -1
@@ -83,8 +83,6 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
       </h2>
       <Graduation plan={plan} passedUnits={passedUnits} totalUnits={totalUnits} />
 
-      {plan.overloads[0] && <OverloadPrompt overload={plan.overloads[0]} student={student} start={start} onChange={onChange} />}
-
       {terms.length === 0 && <p className="empty">Add subjects on the Curriculum tab to see your semesters.</p>}
 
       <ol className="terms">
@@ -93,7 +91,7 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
           const label = termLabel(term)
           const done = recorded.get(i) ?? []
           const next = planned.get(i)
-          const isPast = i < termIndex(start) || (next === undefined && (current === null || i < current))
+          const isPast = current === null ? next === undefined : i < current && (i < termIndex(start) || next === undefined)
           const isCurrent = i === current
           const units = done.reduce((n, d) => n + d.subject.units, 0) + (next?.units ?? 0)
           const recordedRows = done.map(({ subject, attempt }) => (
@@ -156,12 +154,27 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                               <li key={line}>{line}</li>
                             ))}
                           </ul>
-                          {student.not_before?.[s.code] && (
-                            <button type="button" className="link small-text" onClick={() => onChange(undoPostpone(student, s.code))}>
-                              Undo: take it in {termLabel(delay.standardTerm)} after all
-                            </button>
-                          )}
                         </div>
+                      )}
+                      {student.placed?.[s.code] && (
+                        <p className="moved-note small-text">
+                          You moved it here.{' '}
+                          <button
+                            type="button"
+                            className="link"
+                            aria-label={`Undo the move of ${s.code}`}
+                            onClick={() => onChange(unplace(student, s.code))}
+                          >
+                            Undo
+                          </button>
+                        </p>
+                      )}
+                      {current !== null && i > current && (
+                        <MovePicker
+                          code={s.code}
+                          targets={moveTargets(curriculum, plan, student, s.code, current)}
+                          onMove={(target) => onChange(placeSubject(student, s.code, target))}
+                        />
                       )}
                       {isCurrent && (
                         <div className="row finish result-buttons" role="group" aria-label={`Result for ${s.code}`}>
@@ -184,13 +197,17 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                   )
                 })}
               </ul>
-              {isCurrent && next && next.subjects.length > 1 && (
+              {isCurrent && (next?.subjects.length ?? 0) + done.filter((d) => d.attempt.result === 'Ongoing').length > 1 && (
                 <div className="row start-term">
                   <button
                     type="button"
-                    onClick={() =>
-                      onChange(next.subjects.reduce((st, s) => recordResult(st, s.code, term, 'Passed'), student))
-                    }
+                    onClick={() => {
+                      const codes = [
+                        ...done.filter((d) => d.attempt.result === 'Ongoing').map((d) => d.subject.code),
+                        ...(next?.subjects.map((s) => s.code) ?? []),
+                      ]
+                      onChange(codes.reduce((st, code) => recordResult(st, code, term, 'Passed'), student))
+                    }}
                   >
                     Mark all passed
                   </button>
@@ -253,65 +270,37 @@ function RecordedRow({
   )
 }
 
-function OverloadPrompt({
-  overload,
-  student,
-  start,
-  onChange,
-}: {
-  overload: Overload
-  student: StudentData
-  start: Term
-  onChange: (student: StudentData) => void
-}) {
-  const [text, setText] = useState(String(overload.units))
-  const units = Number(text)
-  const valid = Number.isInteger(units) && units >= 1 && units <= 30
-  const label = termLabel(overload.term)
-
+/** "Move" on a later semester's subject: pick another semester it can go to. */
+function MovePicker({ code, targets, onMove }: { code: string; targets: Term[]; onMove: (term: Term) => void }) {
+  const [open, setOpen] = useState(false)
+  if (targets.length === 0) return null
   return (
-    <div className="card prompt" role="alert">
-      <p>
-        <strong>
-          {label} now has {formatUnits(overload.units)} of subjects, more than its full load of {overload.cap}.
-        </strong>{' '}
-        That's from the subjects that moved after a failed subject. How many units do you want to take?
-      </p>
-      <label className="cap-number">
-        <span>Units to take</span>
-        <input type="number" inputMode="numeric" min={1} max={30} value={text} onChange={(e) => setText(e.target.value)} />
-      </label>
-      <div className="row">
-        <button
-          type="button"
-          className="primary"
-          disabled={!valid}
-          onClick={() => {
-            const byTerm = { ...student.unit_caps.by_term, [termKey(overload.term)]: units }
-            onChange({ ...student, unit_caps: { ...student.unit_caps, by_term: byTerm } })
-          }}
-        >
-          {label} only
+    <div className="move">
+      {open ? (
+        <div className="row move-targets" role="group" aria-label={`Move ${code} to`}>
+          <span className="muted small-text">Move to:</span>
+          {targets.map((t) => (
+            <button
+              key={termIndex(t)}
+              type="button"
+              className="small"
+              onClick={() => {
+                onMove(t)
+                setOpen(false)
+              }}
+            >
+              {termLabel(t)}
+            </button>
+          ))}
+          <button type="button" className="small link" onClick={() => setOpen(false)}>
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="small" aria-label={`Move ${code} to another semester`} onClick={() => setOpen(true)}>
+          Move…
         </button>
-        <button
-          type="button"
-          disabled={!valid}
-          onClick={() => {
-            // Every semester from now on: a fixed cap, dropping per-semester caps for those semesters.
-            const fixed = setCapMode(student, false, units)
-            const byTerm = Object.fromEntries(
-              Object.entries(fixed.unit_caps.by_term ?? {}).filter(([key]) => {
-                const term = parseTermKey(key)
-                return term !== null && termIndex(term) < termIndex(start)
-              }),
-            )
-            onChange({ ...fixed, unit_caps: { ...fixed.unit_caps, by_term: byTerm } })
-          }}
-        >
-          Every semester from now on
-        </button>
-      </div>
-      <p className="muted small-text">Fewer units than the subjects due means some move to a later semester.</p>
+      )}
     </div>
   )
 }
