@@ -230,15 +230,12 @@ describe('working semester by semester', () => {
     expect(termOf(plan, '211')).toEqual({ year: 2, sem: 2 })
   })
 
-  test('on the full-load cap, a semester pushed over its full load is reported until a cap is chosen', () => {
-    const student = failed214()
-    expect(planCurriculum(curriculum, student).overloads).toEqual([{ term: { year: 4, sem: 1 }, units: 20, cap: 17 }])
-
-    const chosen = { ...student, unit_caps: { ...student.unit_caps, by_term: { 'Y4-1': 20 } } }
-    const plan = planCurriculum(curriculum, chosen)
-    expect(plan.overloads).toEqual([])
-    expect(plan.terms.find((t) => t.term.year === 4 && t.term.sem === 1)?.units).toBe(20)
-    expect(plan.graduation).toEqual({ year: 5, sem: 2 })
+  test('on the full-load cap, subjects that no longer fit a semester move to a later one', () => {
+    // Year 4, 1st sem would need 20 units (17 + the moved 305); its full load is 17
+    const plan = planCurriculum(curriculum, failed214())
+    const y41 = plan.terms.find((t) => t.term.year === 4 && t.term.sem === 1)!
+    expect(y41.units).toBeLessThanOrEqual(17)
+    expect(ruleViolations(plan, failed214())).toEqual([])
   })
 
   test('the semester in progress keeps its unrecorded subjects and counts the recorded ones', () => {
@@ -260,14 +257,30 @@ describe('working semester by semester', () => {
   })
 })
 
-describe('choosing not to take a subject this sem', () => {
-  test('the subject waits for its next offering, and the subjects that need it wait too', () => {
-    const plan = planCurriculum(curriculum, { ...demo, not_before: { '304': 'Y4-1' } })
+describe('moving subjects', () => {
+  test('"Not this sem": the subject waits for its next offering, and the subjects that need it wait too', () => {
+    const plan = planCurriculum(curriculum, { ...demo, placed: { '304': 'Y4-1' } })
     const termOf = (code: string) => plan.terms.find((t) => t.subjects.some((s) => s.code === code))?.term
     expect(termOf('304')).toEqual({ year: 4, sem: 1 })
     expect(termOf('314')).toEqual({ year: 4, sem: 2 })
     expect(termIndex(termOf('412.1')!)).toBeGreaterThanOrEqual(termIndex({ year: 5, sem: 1 }))
     expect(plan.delays.find((d) => d.code === '304')?.reasons).toContainEqual({ kind: 'postponed', term: { year: 3, sem: 1 } })
     expect(ruleViolations(plan, demo)).toEqual([])
+  })
+
+  test('a subject moved ahead of its curriculum semester goes there when its prerequisites allow', () => {
+    // 303 Practice Court (Year 3, 1st sem, no prerequisites) moved to Year 3, 1st sem is a no-op;
+    // 404 Labor Law Review (Year 4, 2nd sem; needs 205, 215, both passed) moved up to Year 3, 2nd sem
+    const plan = planCurriculum(curriculum, { ...demo, placed: { '404': 'Y3-2' } })
+    const termOf = (code: string) => plan.terms.find((t) => t.subjects.some((s) => s.code === code))?.term
+    expect(termOf('404')).toEqual({ year: 3, sem: 2 })
+    expect(ruleViolations(plan, demo)).toEqual([])
+  })
+
+  test('a subject moved before its prerequisites are done waits until they are', () => {
+    // 305 needs 214, which is retaken in Year 3, 1st sem; moving 305 to Year 3, 1st sem can't hold
+    const plan = planCurriculum(curriculum, { ...demo, placed: { '305': 'Y3-1' } })
+    const termOf = (code: string) => plan.terms.find((t) => t.subjects.some((s) => s.code === code))?.term
+    expect(termOf('305')).toEqual({ year: 4, sem: 1 })
   })
 })

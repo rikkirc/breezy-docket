@@ -1,6 +1,6 @@
 // Pure edits on the student's data. Each returns a new object; nothing is changed in place.
 import { nextTerm, termFromIndex, termIndex, termKey, termLabel } from '../planner'
-import type { Attempt, Delay, Result, StudentData, Subject, SubjectRecord, Term } from '../planner'
+import type { Attempt, Curriculum, Delay, Plan, Result, StudentData, Subject, SubjectRecord, Term } from '../planner'
 
 export const DEFAULT_CAP = 12
 
@@ -99,18 +99,49 @@ export function removeResult(student: StudentData, code: string, term: Term): St
   return setAttempts(student, code, attemptsFor(student, code).filter((a) => termIndex(a) !== termIndex(term)))
 }
 
-/**
- * "Not this sem": the subject (offered in `term`'s semester) is planned no earlier than the next time it's
- * offered, a year later. Subjects that need it move with it through the usual prerequisite rules.
- */
-export function postpone(student: StudentData, code: string, term: Term): StudentData {
-  const until = termKey({ year: term.year + 1, sem: term.sem })
-  return { ...student, not_before: { ...student.not_before, [code]: until } }
+/** Plans a subject in a chosen term ("Not this sem", "Move"). Subjects that need it follow through the prerequisite rules. */
+export function placeSubject(student: StudentData, code: string, term: Term): StudentData {
+  return { ...student, placed: { ...student.placed, [code]: termKey(term) } }
 }
 
-/** Undoes "Not this sem". */
-export function undoPostpone(student: StudentData, code: string): StudentData {
-  const notBefore = { ...student.not_before }
-  delete notBefore[code]
-  return { ...student, not_before: notBefore }
+/** "Not this sem": the subject (offered in `term`'s semester) goes to the next time it's offered, a year later. */
+export function postpone(student: StudentData, code: string, term: Term): StudentData {
+  return placeSubject(student, code, { year: term.year + 1, sem: term.sem })
+}
+
+/** Undoes a move: the app plans the subject again. */
+export function unplace(student: StudentData, code: string): StudentData {
+  const placed = { ...student.placed }
+  delete placed[code]
+  return { ...student, placed }
+}
+
+/**
+ * Semesters a planned subject can move to: the semester it's offered in, after every prerequisite is passed
+ * or planned, from `from` (the semester in progress) to a year past the end of the plan.
+ */
+export function moveTargets(curriculum: Curriculum, plan: Plan, student: StudentData, code: string, from: number): Term[] {
+  const subject = curriculum.subjects.find((s) => s.code === code)
+  const plannedIndex = new Map<string, number>()
+  for (const t of plan.terms) for (const s of t.subjects) plannedIndex.set(s.code, termIndex(t.term))
+  const current = plannedIndex.get(code)
+  if (!subject || current === undefined) return []
+
+  // When each prerequisite is (or will be) done: its passing or ongoing attempt, else where it's planned.
+  let after = -1
+  for (const p of subject.prerequisites) {
+    if (!curriculum.subjects.some((s) => s.code === p)) continue
+    const attempt = attemptsFor(student, p).find((a) => a.result !== 'Failed')
+    const done = attempt ? termIndex(attempt) : plannedIndex.get(p)
+    if (done === undefined) return []
+    after = Math.max(after, done)
+  }
+
+  const last = Math.max(current, ...plannedIndex.values()) + 2
+  const targets: Term[] = []
+  for (let i = Math.max(from, after + 1); i <= last; i++) {
+    const term = termFromIndex(i)
+    if (term.sem === subject.offered_sem && i !== current) targets.push(term)
+  }
+  return targets
 }

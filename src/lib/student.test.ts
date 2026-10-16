@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import { demoStudent, jdCurriculum as curriculum, subjectMap } from '../data'
 
 const subjectsByCode = subjectMap(curriculum)
-import { planCurriculum } from '../planner'
+import { planCurriculum, termIndex, termLabel } from '../planner'
 import {
   describeDelay,
   describeGap,
@@ -10,7 +10,8 @@ import {
   setAttempts,
   postpone,
   setCapMode,
-  undoPostpone,
+  unplace,
+  moveTargets,
   statusOf,
   termAfterResults,
 } from './student'
@@ -44,8 +45,17 @@ describe('student edits', () => {
 
   test('postponing a subject plans it a year later, and undo clears it', () => {
     const later = postpone(demoStudent, '304', { year: 3, sem: 1 })
-    expect(later.not_before).toEqual({ '304': 'Y4-1' })
-    expect(undoPostpone(later, '304').not_before).toEqual({})
+    expect(later.placed).toEqual({ '304': 'Y4-1' })
+    expect(unplace(later, '304').placed).toEqual({})
+  })
+
+  test('a later subject can move to semesters it is offered in, after its prerequisites', () => {
+    const plan = planCurriculum(curriculum, demoStudent)
+    const now = termIndex({ year: 3, sem: 1 })
+    // 312 needs 305, which is planned in Year 4, 1st sem: Year 4, 2nd sem at the earliest; it's there now
+    expect(moveTargets(curriculum, plan, demoStudent, '312', now).map(termLabel)).toEqual(['Year 5, 2nd sem', 'Year 6, 2nd sem'])
+    // 404 needs 205 and 215, both passed: any 2nd sem from now on
+    expect(moveTargets(curriculum, plan, demoStudent, '404', now)[0]).toEqual({ year: 3, sem: 2 })
   })
 
   test('the cap mode switches between full load and a fixed number', () => {

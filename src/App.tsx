@@ -10,9 +10,9 @@ import { WorkingSubjects } from './components/WorkingSubjects'
 type Tab = 'working' | 'curriculum' | 'settings'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'working', label: 'Working Subjects' },
-  { id: 'curriculum', label: 'Curriculum' },
   { id: 'settings', label: 'Settings' },
+  { id: 'curriculum', label: 'Curriculum' },
+  { id: 'working', label: 'Working Subjects' },
 ]
 
 export default function App() {

@@ -885,20 +885,6 @@ button.chip-remove:hover {
   font-size: 0.7rem;
 }
 
-.prompt {
-  border-color: var(--late);
-  background: var(--late-bg);
-  display: grid;
-  gap: 0.75rem;
-}
-
-.prompt p {
-  margin: 0;
-}
-
-.prompt .cap-number input {
-  width: 7rem;
-}
 
 .term.past summary {
   cursor: pointer;
@@ -953,5 +939,28 @@ button.chip-remove:hover {
   .result-buttons button.small {
     padding: 0.2rem 0.3rem;
     font-size: 0.75rem;
+  }
+}
+
+/* Move a later semester's subject */
+
+.move {
+  margin: 0.4rem 0 0 3.9rem;
+}
+
+.move-targets {
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.moved-note {
+  margin: 0.3rem 0 0 3.9rem;
+  color: var(--muted);
+}
+
+@media (max-width: 599px) {
+  .move,
+  .moved-note {
+    margin-left: 0;
   }
 }

@@ -6,11 +6,18 @@ What's done, what's next, and what's blocked. Newest entries first.
 
 - **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
 - **Flow:** (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
-- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the current one with Passed / Failed / Taking / Not this sem; what moved and why; a prompt when a full-load semester is pushed over its load), Curriculum, Settings.
+- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings.
 - **Data:** curriculum and results stay in the browser (localStorage); backups include the curriculum.
-- **Tests:** 75 — planner (25), data edits and wording (7), curriculum edits and recording (10), backup (13), screens in jsdom (20). CI runs lint, type check, tests and build on every push.
+- **Tests:** 79 — planner (27), data edits and wording (8), curriculum edits and recording (10), backup (13), screens in jsdom (21). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 (night) — Move later subjects, Now follows Taking, tab order
+- A semester with subjects marked **Taking** is the **Now** semester (it no longer jumps ahead when everything in it is Taking). "Mark all passed" there also passes the Taking subjects.
+- The "Units to take" prompt is gone: on the full-load cap, subjects that don't fit a semester simply move to a later one.
+- Tabs are now **Settings · Curriculum · Working Subjects** (Working Subjects still opens first).
+- Subjects in semesters after Now have **Move…**: it lists the semesters the subject can go to (only the semester it's offered in, after its prerequisites are passed or planned, from Now to a year past the plan). Subjects can move earlier than their curriculum semester to plan ahead, or later. Subjects that need a moved subject follow through the prerequisite rules. "You moved it here. Undo" on each moved subject.
+- "Not this sem" and Move share one setting: `placed` (subject → semester) on the student; older `not_before` data is read as `placed`.
 
 ### 2026-10-16 (evening) — "Not this sem" and fixed semester units
 - Subjects in the current semester have a **Not this sem** button: the subject moves to the next semester it's offered (a year later), and every subject that needs it moves too, following the prerequisite rules. The moved subject says "You chose not to take it in …" with an Undo link. Stored as `not_before` on the student (kept in backups).

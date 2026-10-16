@@ -1,7 +1,6 @@
 import { nextTerm, parseTermKey, termFromIndex, termIndex, termKey, termLabel } from './terms'
 import type {
   Attempt,
-  Overload,
   Curriculum,
   Delay,
   DelayReason,
@@ -63,6 +62,16 @@ export function fullLoadFor(curriculum: Curriculum, term: Term): number {
   return loads.get(termIndex(term)) || Math.max(0, ...loads.values())
 }
 
+/** Where the student placed subjects ("Not this sem", "Move"): code → term index. */
+export function placements(student: StudentData): Map<string, number> {
+  const placed = new Map<string, number>()
+  for (const [code, key] of Object.entries(student.placed ?? {})) {
+    const term = parseTermKey(key)
+    if (term) placed.set(code, termIndex(term))
+  }
+  return placed
+}
+
 /**
  * The semester planning starts in: student.next_term, or the latest semester with a recorded result if that
  * is later (it is still in progress, so unrecorded subjects can still be planned into it).
@@ -93,11 +102,7 @@ export function planCurriculum(
   const order = new Map(curriculum.subjects.map((s, i) => [s.code, i]))
   const start = planStart(student)
   const startIndex = termIndex(start)
-  const notBefore = new Map<string, number>()
-  for (const [code, key] of Object.entries(student.not_before ?? {})) {
-    const term = parseTermKey(key)
-    if (term) notBefore.set(code, termIndex(term))
-  }
+  const placedAt = placements(student)
 
   // Results recorded before the start term are settled; those in the start term take up its units and
   // count as passed only from the next term on.
@@ -120,7 +125,6 @@ export function planCurriculum(
   const recordedUnits = [...inStartTerm.keys()].reduce((n, code) => n + (subjects.get(code)?.units ?? 0), 0)
 
   const terms: PlannedTerm[] = []
-  const overloads: Overload[] = []
   const plannedIn = new Map<string, Term>()
   let open = [...remaining]
   let term = start
@@ -130,20 +134,22 @@ export function planCurriculum(
     const index = termIndex(term)
     const cap = capFor(curriculum, student, term)
     const used = index === startIndex ? recordedUnits : 0
+    const isOpenNow = (s: Subject) =>
+      s.offered_sem === term.sem &&
+      !(index === startIndex && inStartTerm.has(s.code)) &&
+      s.prerequisites.every((p) => done.has(p) || !subjects.has(p))
+    // Subjects the student placed in a term go there (or the first term after it their prerequisites allow),
+    // even ahead of their curriculum semester and whatever the cap.
+    const placedHere = open.filter((s) => placedAt.has(s.code) && index >= placedAt.get(s.code)! && isOpenNow(s))
     const candidates = open.filter(
       (s) =>
-        s.offered_sem === term.sem &&
+        !placedAt.has(s.code) &&
+        isOpenNow(s) &&
         (options.allowEarly || termIndex({ year: s.standard_year, sem: s.offered_sem }) <= index) &&
-        index >= (notBefore.get(s.code) ?? -Infinity) &&
-        !(index === startIndex && inStartTerm.has(s.code)) &&
-        s.units <= cap &&
-        s.prerequisites.every((p) => done.has(p) || !subjects.has(p)),
+        s.units <= cap,
     )
-    const due = used + sumUnits(candidates)
-    if (student.unit_caps.full_load && due > cap && student.unit_caps.by_term?.[termKey(term)] === undefined) {
-      overloads.push({ term, units: due, cap })
-    }
-    const chosen = chooser(candidates, Math.max(0, cap - used), context).sort(
+    const room = Math.max(0, cap - used - sumUnits(placedHere))
+    const chosen = [...placedHere, ...chooser(candidates, room, context)].sort(
       (a, b) => order.get(a.code)! - order.get(b.code)!,
     )
 
@@ -191,7 +197,6 @@ export function planCurriculum(
     standardGraduation: standard,
     termsBehind: graduation && standard ? termIndex(graduation) - termIndex(standard) : null,
     delays: findDelays(curriculum, student, terms, plannedIn, start),
-    overloads,
     unplanned,
     ongoing: [...ongoing],
   }
@@ -303,11 +308,7 @@ function findDelays(
   }
 
   const startIndex = termIndex(start)
-  const postponedUntil = new Map<string, number>()
-  for (const [code, key] of Object.entries(student.not_before ?? {})) {
-    const term = parseTermKey(key)
-    if (term) postponedUntil.set(code, termIndex(term))
-  }
+  const postponedUntil = placements(student)
   const delays: Delay[] = []
   for (const subject of curriculum.subjects) {
     const planned = plannedIn.get(subject.code)

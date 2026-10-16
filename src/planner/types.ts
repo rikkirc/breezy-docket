@@ -56,8 +56,11 @@ export interface StudentData {
   /** The first term the planner may fill. */
   next_term: Term
   results: SubjectRecord[]
-  /** Subjects the student chose not to take yet: code → the earliest term to plan it in, keyed like "Y4-1". */
-  not_before?: Record<string, string>
+  /**
+   * Subjects the student moved: code → the term to plan it in, keyed like "Y4-1". If its prerequisites
+   * aren't passed by then, it goes to the first term after that they allow.
+   */
+  placed?: Record<string, string>
 }
 
 export interface PlannedSubject {
@@ -90,14 +93,6 @@ export interface Delay {
   reasons: DelayReason[]
 }
 
-/** A semester whose planned subjects add up to more than its full-load cap, after failures shifted subjects. */
-export interface Overload {
-  term: Term
-  /** Units the semester would need to take everything due in it. */
-  units: number
-  cap: number
-}
-
 export interface Plan {
   terms: PlannedTerm[]
   /** The last planned term, or null if some subjects can never be planned. */
@@ -109,8 +104,6 @@ export interface Plan {
   delays: Delay[]
   /** Subjects the planner could not fit anywhere (e.g. more units than the cap, or a prerequisite that is never offered). */
   unplanned: string[]
-  /** Only with the Default (full-load) cap and no cap chosen yet for that semester. */
-  overloads: Overload[]
   /** Subjects marked Ongoing, which count as passed for planning. */
   ongoing: string[]
 }

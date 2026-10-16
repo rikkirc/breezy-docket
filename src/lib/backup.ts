@@ -65,12 +65,21 @@ function cleanStudent(student: StudentData): StudentData {
       by_term: { ...student.unit_caps.by_term },
     },
     next_term: { year: student.next_term.year, sem: student.next_term.sem },
-    ...(student.not_before && Object.keys(student.not_before).length > 0 ? { not_before: { ...student.not_before } } : {}),
+    ...(placedOf(student) ? { placed: placedOf(student) } : {}),
     results: student.results.map((r) => ({
       code: r.code,
       attempts: r.attempts.map((a: Attempt) => ({ year: a.year, sem: a.sem, result: a.result })),
     })),
   }
+}
+
+/**
+ * The student's moved subjects. Versions from before "Move" stored "Not this sem" as `not_before`; it is
+ * read as a placement in that term.
+ */
+export function placedOf(student: StudentData & { not_before?: Record<string, string> }): Record<string, string> | undefined {
+  const placed = { ...student.not_before, ...student.placed }
+  return Object.keys(placed).length > 0 ? placed : undefined
 }
 
 /** Why the value isn't usable student data, or null if it is. Also used for what's in localStorage. */
@@ -86,10 +95,12 @@ export function studentProblem(value: unknown): string | null {
     }
   }
   if (!isTerm(value.next_term)) return 'the semester to plan from is missing.'
-  if (value.not_before !== undefined) {
-    if (!isObject(value.not_before)) return 'the postponed subjects are not readable.'
-    for (const [code, key] of Object.entries(value.not_before)) {
-      if (typeof key !== 'string' || !/^Y\d+-[12]$/.test(key)) return `the postponement of ${code} is not readable.`
+  for (const field of ['placed', 'not_before'] as const) {
+    const moves = value[field]
+    if (moves === undefined) continue
+    if (!isObject(moves)) return 'the moved subjects are not readable.'
+    for (const [code, key] of Object.entries(moves)) {
+      if (typeof key !== 'string' || !/^Y\d+-[12]$/.test(key)) return `the move of ${code} is not readable.`
     }
   }
   if (!Array.isArray(value.results)) return 'the results list is missing.'
