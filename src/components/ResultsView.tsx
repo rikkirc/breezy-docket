@@ -30,10 +30,10 @@ export function ResultsView({ curriculum, student, onChange }: Props) {
 
   return (
     <section aria-labelledby="results-heading">
-      <h2 id="results-heading">Your results</h2>
+      <h2 id="results-heading">Working Subjects</h2>
       <p className="muted">
-        {passedUnits} of {totalUnits} units passed. Tap a subject to record a result. A retake is
-        another attempt on the same subject.
+        {passedUnits} of {totalUnits} units passed. Tap a subject to mark it Passed, Failed or Ongoing
+        (currently taking). A retake is another attempt on the same subject.
       </p>
 
       {groups.map((g) => {

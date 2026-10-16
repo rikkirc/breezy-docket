@@ -126,7 +126,10 @@ input {
 }
 
 .tab {
-  flex: 1;
+  flex: 1 1 auto;
+  padding: 0.5rem 0.35rem;
+  line-height: 1.2;
+  font-size: 0.95rem;
   border: none;
   border-bottom: 3px solid transparent;
   border-radius: 0;
@@ -746,4 +749,121 @@ section > .error {
   .finish {
     margin-left: 4.5rem;
   }
+}
+
+/* Prerequisite chips */
+
+.chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0 3.9rem;
+  padding: 0;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 0.85rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.chip:has(.chip-remove) {
+  padding-right: 0.1rem;
+}
+
+.chip-code {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+button.chip-remove {
+  flex: none;
+  border: none;
+  background: none;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--muted);
+  border-radius: 6px;
+}
+
+button.chip-remove:hover {
+  color: var(--bad);
+  background: var(--bad-bg);
+}
+
+/* Cap choice */
+
+.cap-choice {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.cap-choice legend {
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: 0.4rem;
+}
+
+.choice {
+  display: grid !important;
+  grid-template-columns: auto 1fr;
+  gap: 0.6rem !important;
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--info-bg);
+}
+
+.choice input {
+  min-height: 0;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--accent);
+}
+
+.choice > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.cap-number {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.cap-number input {
+  width: 6rem;
+  font-weight: 400;
+}
+
+@media (min-width: 600px) {
+  .chips {
+    margin-left: 4.5rem;
+  }
+}
+
+.form .choice > span {
+  font-weight: 400;
 }

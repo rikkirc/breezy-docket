@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { CapChoice } from './CapChoice'
 import { jdCurriculum } from '../data'
 import { backupFileName, makeBackup, parseBackup } from '../lib/backup'
 import { isInstalled, useInstallPrompt } from '../lib/useInstallPrompt'
@@ -90,17 +91,8 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
           </span>
         </label>
 
-        <label>
-          <span>Unit cap per semester</span>
-          <CapInput
-            value={student.unit_caps.default}
-            onChange={(cap) => onChange({ ...student, unit_caps: { ...student.unit_caps, default: cap } })}
-          />
-          <span className="muted small-text">
-            The most units you can take while working. Change a single semester with the − / + on the
-            Plan.
-          </span>
-        </label>
+        <CapChoice curriculum={curriculum} student={student} onChange={onChange} />
+        <p className="muted small-text">Change a single semester with the − / + on the Plan.</p>
 
         {overrides.length > 0 && (
           <div>
@@ -118,7 +110,7 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
                       onChange({ ...student, unit_caps: { ...student.unit_caps, by_term: byTerm } })
                     }}
                   >
-                    Use default
+                    Remove
                   </button>
                 </li>
               ))}
@@ -222,25 +214,5 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
         </div>
       </div>
     </section>
-  )
-}
-
-/** Lets the field be empty while typing; only whole numbers from 1 to 30 reach the plan. */
-function CapInput({ value, onChange }: { value: number; onChange: (cap: number) => void }) {
-  const [text, setText] = useState(String(value))
-  return (
-    <input
-      type="number"
-      inputMode="numeric"
-      min={1}
-      max={30}
-      value={text}
-      onChange={(e) => {
-        setText(e.target.value)
-        const cap = Number(e.target.value)
-        if (e.target.value !== '' && Number.isInteger(cap) && cap >= 1 && cap <= 30) onChange(cap)
-      }}
-      onBlur={() => setText(String(value))}
-    />
   )
 }

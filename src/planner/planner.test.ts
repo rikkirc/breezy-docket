@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'vitest'
 import curriculumJson from '../../data/jd-curriculum.json'
 import demoJson from '../../data/demo-student.json'
-import { capFor, planCurriculum, termIndex, type Curriculum, type Plan, type StudentData } from '.'
+import { capFor, fullLoadFor, planCurriculum, termIndex, type Curriculum, type Plan, type StudentData } from '.'
 import { planNaive } from './naive'
 
 const curriculum = curriculumJson as Curriculum
@@ -27,7 +27,7 @@ function ruleViolations(plan: Plan, student: StudentData): string[] {
   const problems: string[] = []
   for (const t of plan.terms) {
     const units = t.subjects.reduce((n, s) => n + s.units, 0)
-    if (units > capFor(student, t.term)) problems.push(`${t.label}: ${units} units over the cap`)
+    if (units > capFor(curriculum, student, t.term)) problems.push(`${t.label}: ${units} units over the cap`)
     if (units !== t.units) problems.push(`${t.label}: reports ${t.units} units but has ${units}`)
     for (const planned of t.subjects) {
       const s = subjects.get(planned.code)!
@@ -164,5 +164,31 @@ describe('planner details', () => {
     const before = JSON.stringify(demo)
     planCurriculum(curriculum, demo)
     expect(JSON.stringify(demo)).toBe(before)
+  })
+})
+
+describe('the Default cap (full load of each semester)', () => {
+  const fullLoad = (student: StudentData): StudentData => ({
+    ...student,
+    unit_caps: { ...student.unit_caps, full_load: true },
+  })
+
+  test('full load per semester comes from the curriculum; later semesters use the largest', () => {
+    expect(fullLoadFor(curriculum, { year: 1, sem: 1 })).toBe(18)
+    expect(fullLoadFor(curriculum, { year: 2, sem: 1 })).toBe(21)
+    expect(fullLoadFor(curriculum, { year: 5, sem: 1 })).toBe(21)
+  })
+
+  test('a new student on full load graduates on time and never goes over a semester\'s full load', () => {
+    const student = fullLoad(freshStudent(12))
+    const plan = planCurriculum(curriculum, student)
+    expect(plan.graduation).toEqual({ year: 4, sem: 2 })
+    expect(ruleViolations(plan, student)).toEqual([])
+  })
+
+  test('per-semester overrides still win over the full load', () => {
+    const student = fullLoad({ ...freshStudent(12), unit_caps: { default: 12, by_term: { 'Y1-1': 9 } } })
+    expect(capFor(curriculum, student, { year: 1, sem: 1 })).toBe(9)
+    expect(capFor(curriculum, student, { year: 1, sem: 2 })).toBe(16)
   })
 })

@@ -46,13 +46,29 @@ export function PrerequisitesEditor({ curriculum, onChange }: Props) {
                       <span className="title">{s.title}</span>
                       <span className="units">{s.prerequisites.length > 0 ? `${s.prerequisites.length} needed` : ''}</span>
                     </button>
-                    <p className="needs small-text">
-                      {options.length === 0
-                        ? 'First semester: no prerequisites.'
-                        : s.prerequisites.length === 0
-                          ? 'No prerequisites. Tap to add.'
-                          : `Needs ${s.prerequisites.map((p) => `${p} ${byCode.get(p)?.title ?? ''}`.trim()).join(', ')}`}
-                    </p>
+                    {s.prerequisites.length > 0 ? (
+                      <ul className="chips" aria-label={`Prerequisites of ${s.code}`}>
+                        {s.prerequisites.map((p) => (
+                          <li key={p} className="chip">
+                            <span>
+                              <span className="chip-code">{p}</span> {byCode.get(p)?.title ?? ''}
+                            </span>
+                            <button
+                              type="button"
+                              className="chip-remove"
+                              aria-label={`Remove ${p} as a prerequisite of ${s.code}`}
+                              onClick={() => onChange(togglePrerequisite(curriculum, s.code, p))}
+                            >
+                              ×
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="needs small-text">
+                        {options.length === 0 ? 'First semester: no prerequisites.' : 'No prerequisites. Tap to add.'}
+                      </p>
+                    )}
                     {isOpen && (
                       <PrerequisiteChecklist
                         id={listId}

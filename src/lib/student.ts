@@ -45,11 +45,18 @@ export function markAllPassed(student: StudentData, subjects: Subject[]): Studen
   return next
 }
 
-export function setCap(student: StudentData, term: Term, cap: number): StudentData {
+/** Sets one term's cap. `base` is what the term gets without an override; matching it removes the override. */
+export function setCap(student: StudentData, term: Term, cap: number, base: number): StudentData {
   const byTerm = { ...student.unit_caps.by_term }
-  if (cap === student.unit_caps.default) delete byTerm[termKey(term)]
+  if (cap === base) delete byTerm[termKey(term)]
   else byTerm[termKey(term)] = cap
   return { ...student, unit_caps: { ...student.unit_caps, by_term: byTerm } }
+}
+
+/** Switches between a fixed cap every semester and the "default" cap: each semester's full load. */
+export function setCapMode(student: StudentData, fullLoad: boolean, cap = student.unit_caps.default): StudentData {
+  const { full_load: _, ...rest } = student.unit_caps
+  return { ...student, unit_caps: fullLoad ? { ...rest, full_load: true } : { ...rest, default: cap } }
 }
 
 /** The term after the student's latest recorded attempt, or null if nothing is recorded. */
