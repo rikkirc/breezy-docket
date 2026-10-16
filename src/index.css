@@ -995,6 +995,16 @@ button.chip-remove:hover {
   opacity: 0.85;
 }
 
+.focus-note {
+  margin: 0.35rem 0 0 3.9rem;
+  color: var(--muted);
+}
+
+.focus-note.focus-key {
+  color: var(--late);
+  font-weight: 600;
+}
+
 .blocked-note {
   margin: 0.35rem 0 0 3.9rem;
   color: var(--late);
@@ -1068,7 +1078,8 @@ button.chip-remove:hover {
 }
 
 @media (max-width: 599px) {
-  .blocked-note {
+  .blocked-note,
+  .focus-note {
     margin-left: 0;
   }
 }
@@ -1110,18 +1121,6 @@ button.google {
   margin: 0;
 }
 
-.have-account summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--accent);
-}
-
-.have-account .account {
-  margin-top: 0.75rem;
-  border: none;
-  padding: 0;
-}
-
 .prompt-conflict {
   margin-top: 0;
   margin-bottom: 1rem;
@@ -1135,6 +1134,15 @@ button.google {
   margin: 0;
 }
 
-.have-account .account h3 {
-  display: none;
+.sign-in-screen {
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.sign-in-screen h2 {
+  margin-bottom: 0.25rem;
+}
+
+.sign-in-screen .account {
+  margin-top: 1rem;
 }

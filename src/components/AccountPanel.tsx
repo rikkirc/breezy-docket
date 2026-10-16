@@ -96,10 +96,7 @@ function SignInForm({ account }: { account: Account }) {
 
   return (
     <>
-      <p className="muted">
-        Optional. Sign in to keep your plan in your account and open it on any device. Without an account, your plan
-        stays only on this device.
-      </p>
+      <p className="muted">Your plan is kept in your account, so it opens on any device you sign in on.</p>
       <button type="button" className="google" disabled={busy} onClick={() => attempt(account.signInWithGoogle)}>
         Continue with Google
       </button>
@@ -170,6 +167,20 @@ function SignInForm({ account }: { account: Account }) {
         can open them. You can delete them any time with “Delete my account”.
       </p>
     </>
+  )
+}
+
+/** The first screen when accounts are on: sign in (or create an account) to open your plan. */
+export function SignInScreen({ account }: { account: Account }) {
+  return (
+    <section className="sign-in-screen" aria-labelledby="sign-in-heading">
+      <h2 id="sign-in-heading">Sign in</h2>
+      <p className="muted">
+        Plan the rest of your subjects semester by semester and see when you'll graduate. Sign in to open your plan, or
+        create an account to start one.
+      </p>
+      <AccountPanel account={account} />
+    </section>
   )
 }
 

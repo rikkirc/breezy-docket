@@ -4,7 +4,10 @@ import { formatUnits, totalUnits } from '../lib/curriculum'
 import { deleteTemplate, loadTemplates, saveTemplate, type Template } from '../lib/templates'
 import type { Curriculum } from '../planner'
 
-/** At the start of setup: begin from a saved template or the sample JD curriculum. */
+/** The curriculum that comes with the app. */
+export const XU_LAW = 'Xavier University - School of Law Curriculum'
+
+/** At the start of setup: begin from a saved template or the built-in Xavier University - School of Law curriculum. */
 export function TemplatePicker({
   hasSubjects,
   onLoad,
@@ -44,8 +47,8 @@ export function TemplatePicker({
           </li>
         ))}
         <li className="template">
-          <button type="button" className="template-load" onClick={() => load(jdCurriculum, 'the sample JD curriculum')}>
-            <span className="template-name">Sample JD curriculum</span>
+          <button type="button" className="template-load" onClick={() => load(jdCurriculum, XU_LAW)}>
+            <span className="template-name">{XU_LAW}</span>
             <span className="muted small-text">
               {jdCurriculum.subjects.length} subjects, {formatUnits(totalUnits(jdCurriculum.subjects))} · for law students
             </span>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 import { subjectMap } from '../data'
 import { formatUnits } from '../lib/curriculum'
 import {
@@ -6,6 +6,8 @@ import {
   blockedByMoving,
   fitTerm,
   describeDelay,
+  graduationIfFailed,
+  neededNext,
   describeGap,
   moveTargets,
   placeSubject,
@@ -75,6 +77,9 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
   const terms: number[] = []
   for (let i = 0; i <= last; i++) if (recorded.has(i) || planned.has(i)) terms.push(i)
 
+  const isPastTerm = (i: number) =>
+    current === null ? !planned.has(i) : i < current && (i < termIndex(start) || !planned.has(i))
+
   const passedUnits = curriculum.subjects
     .filter((s) => statusOf(attemptsFor(student, s.code)) === 'Passed')
     .reduce((n, s) => n + s.units, 0)
@@ -95,7 +100,7 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
           const label = termLabel(term)
           const done = recorded.get(i) ?? []
           const next = planned.get(i)
-          const isPast = current === null ? next === undefined : i < current && (i < termIndex(start) || next === undefined)
+          const isPast = isPastTerm(i)
           const isCurrent = i === current
           const units = done.reduce((n, d) => n + d.subject.units, 0) + (next?.units ?? 0)
           const over = current !== null && i >= current ? overloads.get(i) : undefined
@@ -104,6 +109,15 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
               key={`${subject.code}-done`}
               subject={subject}
               attempt={attempt}
+              note={
+                attempt.result === 'Ongoing' && !isPastTerm(i) ? (
+                  <FocusNote
+                    needed={neededNext(curriculum, plan, subject.code)}
+                    graduation={plan.graduation}
+                    ifFailed={graduationIfFailed(curriculum, student, subject.code, term)}
+                  />
+                ) : null
+              }
               onChange={(result) =>
                 onChange(result === null ? removeResult(student, subject.code, term) : recordResult(student, subject.code, term, result))
               }
@@ -267,10 +281,12 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
 function RecordedRow({
   subject,
   attempt,
+  note,
   onChange,
 }: {
   subject: Subject
   attempt: Attempt
+  note?: ReactNode
   onChange: (result: Result | null) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -287,6 +303,7 @@ function RecordedRow({
         <span className="title">{subject.title}</span>
         <span className={`badge badge-${attempt.result.toLowerCase()}`}>{RESULT_LABEL[attempt.result]}</span>
       </button>
+      {note}
       {open && (
         <div className="row finish" role="group" aria-label={`Change result for ${subject.code}`}>
           {(['Passed', 'Failed', 'Ongoing'] as Result[])
@@ -311,6 +328,22 @@ function RecordedRow({
       )}
     </li>
   )
+}
+
+/** On a subject marked Taking: what passing it unlocks, and what failing it would cost. */
+function FocusNote({ needed, graduation, ifFailed }: { needed: { subject: Subject; term: Term }[]; graduation: Term | null; ifFailed: Term | null }) {
+  const later = graduation && (!ifFailed || termIndex(ifFailed) > termIndex(graduation))
+  const list = needed.map((n) => `${n.subject.code} ${n.subject.title} (${termLabel(n.term)})`)
+  const unlocks =
+    list.length > 0 ? `You need to pass this to take ${list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} and ${list.at(-1)}`}. ` : ''
+  const cost = !later
+    ? needed.length > 0
+      ? `Failing it would move ${needed.length === 1 ? 'that subject' : 'those subjects'} but not your graduation.`
+      : 'No later subject needs this one.'
+    : ifFailed
+      ? `Failing it would move your graduation to ${termLabel(ifFailed)}.`
+      : 'Failing it would leave you unable to finish with these settings.'
+  return <p className={`focus-note small-text${later ? ' focus-key' : ''}`}>{unlocks + cost}</p>
 }
 
 /** Next to Move / Not this sem: the subjects that need this one and are planned soon. */

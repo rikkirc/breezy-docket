@@ -5,7 +5,7 @@ import { planCurriculum, type StudentData } from './planner'
 import { CurriculumView } from './components/CurriculumView'
 import { SettingsView } from './components/SettingsView'
 import { Setup } from './components/Setup'
-import { ConflictPrompt } from './components/AccountPanel'
+import { ConflictPrompt, SignInScreen } from './components/AccountPanel'
 import { useAccount } from './cloud/useAccount'
 import { WorkingSubjects } from './components/WorkingSubjects'
 
@@ -36,11 +36,14 @@ export default function App() {
     show(nextTab ?? 'working')
   }
 
+  // With accounts on, the app opens on the sign-in screen and then shows the signed-in account's plan.
+  const signedIn = !account.enabled || (!!account.user && account.loaded)
+
   return (
     <>
       <header className="app-header">
         <h1>Curriculum Organizer</h1>
-        {saved.setupDone && (
+        {saved.setupDone && signedIn && (
           <nav className="tabs" aria-label="Sections">
             {TABS.map((t) => (
               <button
@@ -58,8 +61,16 @@ export default function App() {
       </header>
 
       <main>
-        <ConflictPrompt account={account} />
-        {!saved.setupDone ? (
+        {signedIn && <ConflictPrompt account={account} />}
+        {!signedIn ? (
+          account.user === null ? (
+            <SignInScreen account={account} />
+          ) : (
+            <p className="muted loading" role="status">
+              {account.user ? 'Opening your plan…' : 'Loading…'}
+            </p>
+          )
+        ) : !saved.setupDone ? (
           <Setup
             workspace={saved}
             onChange={updateWorkspace}
@@ -68,7 +79,6 @@ export default function App() {
               show('working')
             }}
             onTryDemo={() => replace(demoSaved())}
-            account={account}
           />
         ) : (
           <>

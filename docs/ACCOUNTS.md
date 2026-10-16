@@ -1,11 +1,12 @@
-# Accounts (optional sign-in)
+# Accounts (sign-in)
 
-Students can use the app without an account: their plan stays in that browser only. Signing in keeps the plan in
-their account so it opens on any device, and edits on one device show up on the others.
+The app opens on a sign-in screen: students sign in (or create an account) and then see the plan saved in that
+account, on any device; edits on one device show up on the others. They stay signed in on that device until they
+tap **Sign out**, which returns to the sign-in screen and clears the device's copy.
 
 Accounts run on **Firebase** (Google's free Spark plan): **Authentication** for sign-in (Google, or email and
 password) and **Cloud Firestore** for each student's plan. Until `src/cloud/config.ts` has a project's config,
-the app shows no account option and works exactly as before.
+the app has no sign-in screen and keeps the plan in the browser only.
 
 ## One-time setup (about 10 minutes)
 
@@ -46,7 +47,7 @@ the data is step 5's rules and step 3's authorized domains.
 
 Grades are personal data under the Data Privacy Act of 2012. With an account they are stored in Google Firebase
 (Singapore), linked to the student's sign-in and readable only by them. The sign-in panel says so, and students
-can delete everything with **Delete my account**. Without an account nothing leaves the device.
+can delete everything with **Delete my account**.
 
 ## Tests
 

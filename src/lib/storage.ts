@@ -63,7 +63,7 @@ export function initialSaved(): Saved {
   return { curriculum: emptyCurriculum(), student: freshStudent(), isDemo: false, setupDone: false }
 }
 
-/** The made-up demo student on the sample JD curriculum. */
+/** The made-up demo student on the Xavier University - School of Law curriculum. */
 export function demoSaved(): Saved {
   return { curriculum: jdCurriculum, student: demoStudent, isDemo: true, setupDone: true }
 }
