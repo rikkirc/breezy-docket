@@ -224,6 +224,7 @@ describe('accounts', () => {
     expect(screen.getByRole('heading', { name: 'Privacy notice' })).toBeInTheDocument()
     expect(screen.getByText(/sensitive personal information under the Data Privacy Act of 2012 \(RA 10173\)/)).toBeInTheDocument()
     expect(screen.getByText(/no analytics or tracking/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'rikkicabanlet@gmail.com' })).toHaveAttribute('href', 'mailto:rikkicabanlet@gmail.com')
     await user.click(screen.getByRole('button', { name: '← Back' }))
     expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
 

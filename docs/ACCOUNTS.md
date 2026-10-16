@@ -58,7 +58,7 @@ everything with **Delete my account**.
 **When `firestore.rules` changes, publish it again** (Firestore Database → Rules → paste → Publish). The app
 version that saves `consentedAt` needs the rules that allow it; with the old rules, saves are refused.
 
-Set the contact address shown at the end of the notice in `PRIVACY_CONTACT` (`src/components/PrivacyNotice.tsx`).
+The contact address at the end of the notice is `PRIVACY_CONTACT` in `src/components/PrivacyNotice.tsx`.
 
 ## Tests
 

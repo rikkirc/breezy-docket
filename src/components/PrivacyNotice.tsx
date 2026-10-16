@@ -1,5 +1,5 @@
 /** Where questions and data requests go. Shown at the end of the Privacy notice. */
-export const PRIVACY_CONTACT = '[contact email to be added]'
+export const PRIVACY_CONTACT = 'rikkicabanlet@gmail.com'
 
 /** What the app keeps, where, who can see it, for how long, and the student's rights. */
 export function PrivacyNotice({ onBack }: { onBack: () => void }) {
@@ -33,7 +33,9 @@ export function PrivacyNotice({ onBack }: { onBack: () => void }) {
           are treated as sensitive personal information under the Data Privacy Act of 2012 (RA 10173).
         </p>
         <h3>Questions or requests</h3>
-        <p>{PRIVACY_CONTACT}</p>
+        <p>
+          Email <a href={`mailto:${PRIVACY_CONTACT}`}>{PRIVACY_CONTACT}</a>
+        </p>
       </div>
     </section>
   )
