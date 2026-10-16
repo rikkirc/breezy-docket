@@ -4,7 +4,7 @@ What's done, what's next, and what's blocked. Newest entries first.
 
 ## Current state (2026-10-16) — sign in first, then Working Subjects
 
-- **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
+- **Live:** https://rikkirc.github.io/breezy-docket/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
 - **Flow:** (0) sign in (Google or email) — the app always opens on the sign-in screen and then shows that account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
 - **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings.
 - **Data:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; backups include the curriculum.
@@ -13,7 +13,7 @@ What's done, what's next, and what's blocked. Newest entries first.
 ## Log
 
 ### 2026-10-16 — Breezy Docket
-- The app is now **Breezy Docket** (header, browser tab, phone install name). The sign-in screen shows the tagline "Breeze your way through every sem, all the way to graduation." and "by: RCbreezy©". The link stays https://rikkirc.github.io/curriculum-organizer/.
+- The app is now **Breezy Docket** (header, browser tab, phone install name). The sign-in screen shows the tagline "Breeze your way through every sem, all the way to graduation." and "by: RCbreezy©". The link is now https://rikkirc.github.io/breezy-docket/ (repository renamed from curriculum-organizer).
 
 ### 2026-10-16 — Sign-in first, focus notes, Xavier University curriculum
 - **Sign-in screen first:** the app opens on "Sign in" (Google, or email and password, or create an account) and then shows the plan saved in that account. Someone already signed in on the device goes straight to their plan ("Opening your plan…" while it loads). Sign out returns to the sign-in screen and clears the device. A plan already on the device is offered to the account on first sign-in, as before. The "Have an account?" panel in setup is gone.
