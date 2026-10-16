@@ -5,6 +5,8 @@ import { planCurriculum, type StudentData } from './planner'
 import { CurriculumView } from './components/CurriculumView'
 import { SettingsView } from './components/SettingsView'
 import { Setup } from './components/Setup'
+import { ConflictPrompt } from './components/AccountPanel'
+import { useAccount } from './cloud/useAccount'
 import { WorkingSubjects } from './components/WorkingSubjects'
 
 type Tab = 'working' | 'curriculum' | 'settings'
@@ -21,6 +23,7 @@ export default function App() {
   const plan = useMemo(() => planCurriculum(saved.curriculum, saved.student, { overCap: 'flag' }), [saved.curriculum, saved.student])
 
   useEffect(() => save(saved), [saved])
+  const account = useAccount(saved, setSaved)
 
   const updateStudent = (student: StudentData) => setSaved((s) => ({ ...s, student }))
   const updateWorkspace = ({ curriculum, student }: Workspace) => setSaved((s) => ({ ...s, curriculum, student }))
@@ -55,6 +58,7 @@ export default function App() {
       </header>
 
       <main>
+        <ConflictPrompt account={account} />
         {!saved.setupDone ? (
           <Setup
             workspace={saved}
@@ -64,6 +68,7 @@ export default function App() {
               show('working')
             }}
             onTryDemo={() => replace(demoSaved())}
+            account={account}
           />
         ) : (
           <>
@@ -82,6 +87,7 @@ export default function App() {
             {tab === 'curriculum' && <CurriculumView workspace={saved} onChange={updateWorkspace} />}
             {tab === 'settings' && (
               <SettingsView
+                account={account}
                 curriculum={saved.curriculum}
                 student={saved.student}
                 isDemo={saved.isDemo}

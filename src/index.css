@@ -1072,3 +1072,69 @@ button.chip-remove:hover {
     margin-left: 0;
   }
 }
+
+/* Account */
+
+.account h3 {
+  font-size: 1.05rem;
+}
+
+.account p {
+  margin: 0;
+}
+
+button.google {
+  width: 100%;
+  font-weight: 600;
+}
+
+.email-sign-in {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.email-sign-in label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.email-sign-in input {
+  width: 100% !important;
+  font-weight: 400;
+}
+
+.email-sign-in .or {
+  text-align: center;
+  margin: 0;
+}
+
+.have-account summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.have-account .account {
+  margin-top: 0.75rem;
+  border: none;
+  padding: 0;
+}
+
+.prompt-conflict {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-color: var(--accent);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.prompt-conflict h3,
+.prompt-conflict p {
+  margin: 0;
+}
+
+.have-account .account h3 {
+  display: none;
+}

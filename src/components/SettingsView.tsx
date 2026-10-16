@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 import { CapChoice } from './CapChoice'
+import { AccountPanel } from './AccountPanel'
+import type { Account } from '../cloud/useAccount'
 import { jdCurriculum } from '../data'
 import { backupFileName, makeBackup, parseBackup } from '../lib/backup'
 import { isInstalled, useInstallPrompt } from '../lib/useInstallPrompt'
@@ -9,6 +11,7 @@ import { freshStudent, termAfterResults } from '../lib/student'
 import { parseTermKey, termIndex, termLabel, type Curriculum, type StudentData } from '../planner'
 
 interface Props {
+  account: Account
   student: StudentData
   isDemo: boolean
   onChange: (student: StudentData) => void
@@ -17,7 +20,7 @@ interface Props {
   onReplace: (saved: Saved, show?: 'working') => void
 }
 
-export function SettingsView({ curriculum, student, isDemo, onChange, onReplace }: Props) {
+export function SettingsView({ account, curriculum, student, isDemo, onChange, onReplace }: Props) {
   // Caps for semesters already taken no longer affect the plan, so only future ones are listed.
   const overrides = Object.entries(student.unit_caps.by_term ?? {}).filter(([key]) => {
     const term = parseTermKey(key)
@@ -56,6 +59,7 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
   return (
     <section aria-labelledby="settings-heading">
       <h2 id="settings-heading">Settings</h2>
+      <AccountPanel account={account} />
 
       <div className="card form">
         <label>

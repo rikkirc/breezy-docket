@@ -4,7 +4,7 @@ Plans the remaining subjects of a working student into future semesters under a 
 
 **Live demo:** https://rikkirc.github.io/curriculum-organizer/ (updates on every merge to `main`; opens on a phone too).
 
-**Status:** first-run setup builds the curriculum in 3 steps (subjects and units by semester → prerequisites → review the default plan and unit cap). Then Working Subjects shows every semester: record results as you go, and failed subjects plus everything that needs them move to their next offering automatically, with the expected graduation on top. JSON backup; installable on a phone (works offline). Data stays in your browser.
+**Status:** first-run setup builds the curriculum in 3 steps (subjects and units by semester → prerequisites → review the default plan and unit cap). Then Working Subjects shows every semester: record results as you go, and failed subjects plus everything that needs them move to their next offering automatically, with the expected graduation on top. JSON backup; installable on a phone (works offline). Data stays in your browser unless you sign in (optional): then your plan syncs across devices — see [docs/ACCOUNTS.md](docs/ACCOUNTS.md).
 
 ## Run it
 

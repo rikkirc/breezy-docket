@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { Workspace } from '../lib/curriculum'
 import { CapChoice } from './CapChoice'
+import { AccountPanel } from './AccountPanel'
+import type { Account } from '../cloud/useAccount'
 import { DefaultPlanReview } from './DefaultPlanReview'
 import { PrerequisitesEditor } from './PrerequisitesEditor'
 import { SubjectsEditor } from './SubjectsEditor'
@@ -15,10 +17,11 @@ interface Props {
   onChange: (workspace: Workspace) => void
   onFinish: () => void
   onTryDemo: () => void
+  account: Account
 }
 
 /** First run: build the curriculum (subjects, then prerequisites), review the default plan, then start. */
-export function Setup({ workspace, onChange, onFinish, onTryDemo }: Props) {
+export function Setup({ workspace, onChange, onFinish, onTryDemo, account }: Props) {
   const [step, setStep] = useState<Step>(0)
   const empty = workspace.curriculum.subjects.length === 0
   const go = (next: Step) => {
@@ -43,6 +46,12 @@ export function Setup({ workspace, onChange, onFinish, onTryDemo }: Props) {
             Add every subject in your curriculum with its units, under the semester it's taken in the standard
             plan, from Year 1 up to graduation.
           </p>
+          {account.enabled && account.user === null && (
+            <details className="card have-account">
+              <summary>Have an account? Sign in to open your plan</summary>
+              <AccountPanel account={account} />
+            </details>
+          )}
           <div className="card intro">
             <TemplatePicker hasSubjects={!empty} onLoad={(curriculum) => onChange({ ...workspace, curriculum })} />
             {empty && (

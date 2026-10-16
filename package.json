@@ -10,9 +10,11 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:firebase": "npx --yes firebase-tools@14 emulators:exec --only auth,firestore --project demo-curriculum \"node --test --test-force-exit scripts/test-firebase.ts\""
   },
   "dependencies": {
+    "firebase": "^12.19.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
@@ -29,5 +31,8 @@
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.6"
   }
 }

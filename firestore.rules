@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Security rules for Curriculum Organizer accounts. Paste this whole file into Firebase console →
+// Firestore Database → Rules, then Publish. See docs/ACCOUNTS.md.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Each student's plan is one document, named by their user ID: only they can read, write or delete it.
+    match /plans/{uid} {
+      function isOwner() { return request.auth != null && request.auth.uid == uid; }
+
+      function isPlan(data) {
+        return data.keys().hasOnly(['version', 'curriculum', 'student', 'setupDone', 'updatedAt'])
+          && data.version == 1
+          && data.curriculum is map
+          && data.student is map
+          && data.setupDone is bool
+          && data.updatedAt == request.time;
+      }
+
+      allow get, delete: if isOwner();
+      allow create, update: if isOwner() && isPlan(request.resource.data);
+      // No listing: nobody can browse other students' plans.
+    }
+
+    // Nothing else is readable or writable.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
