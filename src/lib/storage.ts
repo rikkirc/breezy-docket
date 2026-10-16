@@ -1,21 +1,27 @@
 // The student's data stays in this browser (localStorage), never on a server: grades are personal data.
-import type { StudentData } from '../planner'
+import { demoStudent, jdCurriculum } from '../data'
+import type { Curriculum, StudentData } from '../planner'
 import { studentProblem } from './backup'
+import { curriculumProblem, emptyCurriculum } from './curriculum'
+import { freshStudent } from './student'
 
 const KEY = 'curriculum-organizer:v1'
 
 export interface Saved {
+  /** The student's own curriculum: subjects, units and prerequisites. */
+  curriculum: Curriculum
   student: StudentData
   /** True while the student is the made-up demo, so the app can say so. */
   isDemo: boolean
+  /** False until the student has entered their subjects and prerequisites and reviewed the default plan. */
+  setupDone: boolean
 }
 
 export function loadSaved(): Saved | null {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
-    return isSaved(parsed) ? parsed : null
+    return fromStored(JSON.parse(raw))
   } catch {
     return null
   }
@@ -29,8 +35,32 @@ export function save(saved: Saved): void {
   }
 }
 
-function isSaved(value: unknown): value is Saved {
-  if (typeof value !== 'object' || value === null) return false
-  const { student, isDemo } = value as Partial<Saved>
-  return typeof isDemo === 'boolean' && studentProblem(student) === null
+/**
+ * Checks what was stored. Data saved before the curriculum was editable has no curriculum: it was made
+ * with the JD curriculum, so it keeps that one and skips setup.
+ */
+export function fromStored(value: unknown): Saved | null {
+  if (typeof value !== 'object' || value === null) return null
+  const stored = value as Partial<Saved>
+  if (typeof stored.isDemo !== 'boolean' || studentProblem(stored.student) !== null) return null
+  if (stored.curriculum === undefined) {
+    return { curriculum: jdCurriculum, student: stored.student!, isDemo: stored.isDemo, setupDone: true }
+  }
+  if (curriculumProblem(stored.curriculum) !== null) return null
+  return {
+    curriculum: stored.curriculum,
+    student: stored.student!,
+    isDemo: stored.isDemo,
+    setupDone: stored.setupDone !== false,
+  }
+}
+
+/** A first visit: an empty curriculum and the setup steps. */
+export function initialSaved(): Saved {
+  return { curriculum: emptyCurriculum(), student: freshStudent(), isDemo: false, setupDone: false }
+}
+
+/** The made-up demo student on the sample JD curriculum. */
+export function demoSaved(): Saved {
+  return { curriculum: jdCurriculum, student: demoStudent, isDemo: true, setupDone: true }
 }

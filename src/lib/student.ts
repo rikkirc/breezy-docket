@@ -102,3 +102,26 @@ function joinAnd(items: string[]): string {
   if (items.length <= 1) return items.join('')
   return `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
 }
+
+/** "I'm taking these now": records the subjects as Ongoing in that term and plans from the term after it. */
+export function startTerm(student: StudentData, term: Term, codes: string[]): StudentData {
+  let next = student
+  for (const code of codes) {
+    next = setAttempts(next, code, [...attemptsFor(next, code), { year: term.year, sem: term.sem, result: 'Ongoing' }])
+  }
+  return { ...next, next_term: nextTerm(term) }
+}
+
+/** Turns a subject's Ongoing attempt into Passed or Failed. */
+export function finishOngoing(student: StudentData, code: string, result: 'Passed' | 'Failed'): StudentData {
+  return setAttempts(
+    student,
+    code,
+    attemptsFor(student, code).map((a) => (a.result === 'Ongoing' ? { ...a, result } : a)),
+  )
+}
+
+/** Removes a subject's Ongoing attempt (the student dropped it or didn't enrol after all). */
+export function dropOngoing(student: StudentData, code: string): StudentData {
+  return setAttempts(student, code, attemptsFor(student, code).filter((a) => a.result !== 'Ongoing'))
+}

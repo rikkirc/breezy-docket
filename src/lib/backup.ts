@@ -1,18 +1,27 @@
 // Export and import the student's data as a JSON file, so it can be backed up or moved to another device.
-import type { Attempt, StudentData } from '../planner'
+import type { Attempt, Curriculum, StudentData } from '../planner'
+import { cleanCurriculum, curriculumProblem } from './curriculum'
 
 export const BACKUP_APP = 'curriculum-organizer'
-export const BACKUP_VERSION = 1
+/** Version 2 added the curriculum; version 1 backups were made with the JD curriculum. */
+export const BACKUP_VERSION = 2
 
 export interface Backup {
   app: typeof BACKUP_APP
   version: number
   exported_at: string
+  curriculum: Curriculum
   student: StudentData
 }
 
-export function makeBackup(student: StudentData, now = new Date()): Backup {
-  return { app: BACKUP_APP, version: BACKUP_VERSION, exported_at: now.toISOString(), student }
+export interface Imported {
+  student: StudentData
+  /** Missing from version 1 backups and bare student files. */
+  curriculum?: Curriculum
+}
+
+export function makeBackup(curriculum: Curriculum, student: StudentData, now = new Date()): Backup {
+  return { app: BACKUP_APP, version: BACKUP_VERSION, exported_at: now.toISOString(), curriculum, student }
 }
 
 export function backupFileName(now = new Date()): string {
@@ -24,7 +33,7 @@ export function backupFileName(now = new Date()): string {
  * Reads a backup file's text. Also accepts bare student data in the shape of data/demo-student.json.
  * Throws an Error with a message fit to show the student when the file can't be used.
  */
-export function parseBackup(text: string): StudentData {
+export function parseBackup(text: string): Imported {
   let value: unknown
   try {
     value = JSON.parse(text)
@@ -37,8 +46,17 @@ export function parseBackup(text: string): StudentData {
   }
   const problem = studentProblem(candidate)
   if (problem) throw new Error(`This file can't be imported: ${problem}`)
-  const student = candidate as StudentData
-  // Keep only the fields the app uses, so nothing unexpected is stored.
+  let curriculum: Curriculum | undefined
+  if (isObject(value) && value.app === BACKUP_APP && value.curriculum !== undefined) {
+    const curriculumIssue = curriculumProblem(value.curriculum)
+    if (curriculumIssue) throw new Error(`This file can't be imported: ${curriculumIssue}`)
+    curriculum = cleanCurriculum(value.curriculum as Curriculum)
+  }
+  return { student: cleanStudent(candidate as StudentData), ...(curriculum ? { curriculum } : {}) }
+}
+
+/** Keeps only the fields the app uses, so nothing unexpected is stored. */
+function cleanStudent(student: StudentData): StudentData {
   return {
     ...(student.student ? { student: student.student } : {}),
     unit_caps: {

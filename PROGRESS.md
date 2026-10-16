@@ -2,15 +2,26 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-15) — Milestone 3: what-if, backup, installable
+## Current state (2026-10-15) — student-built curriculum
 
 - **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
-- **Screens:** Plan (graduation date, terms with − / + unit cap, delay reasons, what-if), Results (Passed / Failed / Ongoing per subject, retakes as extra attempts), Settings (plan-from term, default cap, install, backup, start fresh / demo).
-- **Data:** stays in the browser (localStorage); export/import a JSON backup to keep a copy or move devices.
-- **Install:** add to the home screen on iPhone or Android; opens like an app and works offline.
-- **Tests:** 53 — planner acceptance tests and checks (17), data edits and wording (8), what-if (8), backup (11), and 9 that drive the screens (jsdom). CI runs lint, type check, tests and build on every push.
+- **Flow:** (1) enter every subject and its units by semester, Year 1 to graduation; (2) tick each subject's prerequisites; (3) review the default plan and set the unit cap; (4) record results as you go ("I'm taking these now", then Passed / Failed); (5) the planner re-plans the rest.
+- **Screens:** setup (3 steps), Plan (graduation, taking now, terms with − / + cap, delay reasons, what-if), Results, Curriculum (edit subjects, prerequisites, default plan any time), Settings (plan-from term, cap, install, backup, clear results / start over / demo).
+- **Data:** curriculum and results stay in the browser (localStorage); backups include the curriculum.
+- **Tests:** 72 — planner (17), data edits and wording (8), curriculum edits (10), what-if (8), backup (13), screens in jsdom (16). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-15 (late night) — the student builds the curriculum
+- First visit opens a 3-step setup instead of the demo: Subjects (add code, title, units under each semester; add more years up to Year 8; edit, move or delete), Prerequisites (tick earlier subjects only), Review (default plan, total units, standard graduation, unit cap).
+- "Use the sample JD curriculum" loads the 53 JD subjects to edit; "look around with a demo student" opens the demo.
+- Curriculum tab to change subjects and prerequisites later. Renaming a code carries into prerequisites and results; deleting a subject removes its results (asks first). Moving a subject so a prerequisite is no longer earlier is reported in plain words.
+- Plan: "I'm taking these now" on the next semester records its subjects as Ongoing; a "Taking now" card then has Passed / Failed / Not taking it for each.
+- The standard graduation term now comes from the curriculum (latest semester with subjects) instead of a fixed Year 4, 2nd sem.
+- Units spelled out everywhere ("3 units", "1 unit").
+- Settings: "Clear my results" (keeps the curriculum) and "Start over" (back to setup) replace "Start fresh".
+- Saved data and version 1 backups from before keep working on the JD curriculum. Backups are now version 2 and include the curriculum.
+- Screen readers now hear "214 Corporation…" instead of "214Corporation…" on subject rows.
 
 ### 2026-10-15 (night) — Milestone 3
 - What-if on the Plan: "I fail X this sem" (this sem = the Ongoing subjects, or the first planned semester) and "I take N units every sem from now on". Shows the what-if graduation next to your real one; nothing is saved.
