@@ -125,10 +125,10 @@ describe('setup: building the curriculum', () => {
     expect(form.getByRole('alert')).toHaveTextContent('There is already a subject with code LAW1.')
   })
 
-  test('starting from the sample JD curriculum, cap 21: on schedule', async () => {
+  test('starting from the Xavier University - School of Law curriculum, cap 21: on schedule', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: /Sample JD curriculum/ }))
+    await user.click(screen.getByRole('button', { name: /Xavier University - School of Law Curriculum/ }))
     expect(within(section('Year 4, 2nd sem')).getByText('18 units')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Next: Prerequisites' }))
     await user.click(screen.getByRole('button', { name: 'Next: Review' }))
@@ -145,7 +145,7 @@ describe('setup: building the curriculum', () => {
   test('the Default cap follows each semester\'s full load', async () => {
     const user = userEvent.setup()
     render(<App />)
-    await user.click(screen.getByRole('button', { name: /Sample JD curriculum/ }))
+    await user.click(screen.getByRole('button', { name: /Xavier University - School of Law Curriculum/ }))
     await user.click(screen.getByRole('button', { name: 'Next: Prerequisites' }))
     await user.click(screen.getByRole('button', { name: 'Next: Review' }))
     await user.click(screen.getByRole('radio', { name: /Default/ }))
@@ -274,6 +274,25 @@ describe('working subjects', () => {
     expect(within(semester('Year 3, 1st sem')).getByRole('button', { name: /214 .*: Taking/ })).toBeInTheDocument()
   })
 
+  test('a subject marked Taking says what passing it unlocks and what failing it would cost', async () => {
+    const user = userEvent.setup()
+    await openDemo(user)
+    await user.click(within(screen.getByRole('group', { name: 'Result for 214' })).getByRole('button', { name: 'Taking' }))
+    const now = semester('Year 3, 1st sem')
+    expect(within(now).getByText(/^You need to pass this to take 315 Commercial Laws II \(Year 3, 2nd sem\), 305 Commercial Laws I \(Year 4, 1st sem\)/)).toHaveTextContent(
+      'Failing it would move your graduation to Year 6, 2nd sem.',
+    )
+    // Subjects with nothing riding on them say so, so the student knows where to focus
+    for (const code of ['301', '302', '304', '306', '307']) {
+      const group = screen.queryByRole('group', { name: `Result for ${code}` })
+      if (group) await user.click(within(group).getByRole('button', { name: 'Taking' }))
+    }
+    expect(within(now).getByText(/^You need to pass this to take 411 Legal and Judicial Ethics/)).toHaveTextContent(
+      'Failing it would move that subject but not your graduation.',
+    )
+    expect(within(now).getAllByText('No later subject needs this one.')).toHaveLength(2)
+  })
+
   test('a later semester\'s subject can be moved to another semester, following prerequisites; undo restores it', async () => {
     const user = userEvent.setup()
     await openDemo(user)
@@ -376,7 +395,7 @@ describe('results and data', () => {
     await user.click(tab('Settings'))
     await user.click(screen.getByRole('button', { name: 'Start over' }))
     expect(screen.getByRole('heading', { name: 'Your subjects' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Sample JD curriculum/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Xavier University - School of Law Curriculum/ })).toBeInTheDocument()
   })
 
   test('remembers the curriculum and data after a reload', async () => {

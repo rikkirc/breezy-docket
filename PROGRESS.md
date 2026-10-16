@@ -2,15 +2,20 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-16) — Working Subjects is the main screen
+## Current state (2026-10-16) — sign in first, then Working Subjects
 
 - **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
-- **Flow:** (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
+- **Flow:** (0) sign in (Google or email) — the app always opens on the sign-in screen and then shows that account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
 - **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings.
-- **Data:** curriculum and results stay in the browser (localStorage); backups include the curriculum.
-- **Tests:** 101 — planner (29), data edits and wording (10), curriculum edits and recording (10), backup (13), templates (2), sync (5), screens in jsdom (25), account flow (7); plus 5 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
+- **Data:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; backups include the curriculum.
+- **Tests:** 104 — planner (29), data edits and wording (10), curriculum edits and recording (10), backup (13), templates (2), sync (5), screens in jsdom (26), account flow (9); plus 5 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 — Sign-in first, focus notes, Xavier University curriculum
+- **Sign-in screen first:** the app opens on "Sign in" (Google, or email and password, or create an account) and then shows the plan saved in that account. Someone already signed in on the device goes straight to their plan ("Opening your plan…" while it loads). Sign out returns to the sign-in screen and clears the device. A plan already on the device is offered to the account on first sign-in, as before. The "Have an account?" panel in setup is gone.
+- **Taking subjects say what's riding on them:** "You need to pass this to take 305 Commercial Laws I (Year 4, 1st sem) …", then what failing would do: "Failing it would move your graduation to Year 6, 2nd sem." (in red), "…would move those subjects but not your graduation.", or "No later subject needs this one."
+- **Xavier University - School of Law Curriculum** replaces "Sample JD curriculum" as the built-in template at the start of setup (same 53 subjects, 142 units).
 
 ### 2026-10-16 — Optional accounts (Firebase)
 - Optional sign-in with Google or email and password: Settings → Account, and "Have an account? Sign in" on the first setup screen. Signed in, the plan is kept in the student's account (Firestore `plans/{uid}`) and syncs across devices; edits save shortly after they're made and changes from other devices appear automatically.

@@ -1,5 +1,5 @@
 // Pure edits on the student's data. Each returns a new object; nothing is changed in place.
-import { chooseBest, countDependents, nextTerm, termFromIndex, termIndex, termKey, termLabel } from '../planner'
+import { chooseBest, countDependents, nextTerm, planCurriculum, termFromIndex, termIndex, termKey, termLabel } from '../planner'
 import type { Attempt, Curriculum, Delay, Plan, Result, StudentData, Subject, SubjectRecord, Term } from '../planner'
 
 export const DEFAULT_CAP = 12
@@ -184,4 +184,21 @@ export function blockedByMoving(curriculum: Curriculum, plan: Plan, code: string
     }
   }
   return blocked
+}
+
+/** For a subject being taken now: the planned subjects that need it passed, earliest first. */
+export function neededNext(curriculum: Curriculum, plan: Plan, code: string): { subject: Subject; term: Term }[] {
+  const needed: { subject: Subject; term: Term }[] = []
+  for (const t of plan.terms) {
+    for (const s of t.subjects) {
+      const subject = curriculum.subjects.find((x) => x.code === s.code)
+      if (subject?.prerequisites.includes(code)) needed.push({ subject, term: t.term })
+    }
+  }
+  return needed.sort((a, b) => termIndex(a.term) - termIndex(b.term))
+}
+
+/** The graduation term if the student fails a subject they're taking in `term` (null: can't finish). */
+export function graduationIfFailed(curriculum: Curriculum, student: StudentData, code: string, term: Term): Term | null {
+  return planCurriculum(curriculum, recordResult(student, code, term, 'Failed'), { overCap: 'flag' }).graduation
 }

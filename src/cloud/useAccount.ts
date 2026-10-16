@@ -14,6 +14,8 @@ export interface Account {
   /** undefined while checking whether someone is signed in. */
   user: AccountUser | null | undefined
   status: SyncStatus
+  /** False while a signed-in account's plan is being opened for the first time. */
+  loaded: boolean
   /** On sign-in, when this device and the account both have a different plan: which to keep. */
   conflict: CloudPlan | null
   keepAccountPlan: () => void
@@ -29,7 +31,7 @@ export interface Account {
 const SAVE_DELAY_MS = 800
 
 /**
- * Accounts are optional: signed out, the plan lives only on this device. Signed in, the plan is also kept in the
+ * When accounts are on, the student signs in first (App shows the sign-in screen until then). Signed in, the plan is also kept in the
  * student's account and follows them to any device; edits on one device show up on the others.
  */
 export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Account {
@@ -37,6 +39,8 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
   const [user, setUser] = useState<AccountUser | null | undefined>(enabled ? undefined : null)
   const [status, setStatus] = useState<SyncStatus>('idle')
   const [conflict, setConflict] = useState<CloudPlan | null>(null)
+  /** The account whose plan has been opened on this device. */
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
   const module = useRef<AccountModule | null>(null)
   const cloud = useRef<Cloud | null>(null)
   /** The plan as last sent to or received from the account, to avoid echoing it back. */
@@ -91,13 +95,17 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
         if (decision === 'ask') setConflict(stored)
         ready.current = decision !== 'ask'
         setStatus('synced')
+        setLoadedFor(user.uid)
         stopWatching = m.watchPlan(c, user.uid, (value) => {
           const plan = readCloudPlan(value)
           if (!plan || !ready.current || JSON.stringify(plan) === lastSynced.current) return
           apply(plan)
         })
       } catch {
-        if (!cancelled) setStatus('error')
+        if (cancelled) return
+        // Offline or unreachable: open the plan on this device; edits save once the account can be reached.
+        setStatus('error')
+        setLoadedFor(user.uid)
       }
     })()
     return () => {
@@ -134,6 +142,7 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
     enabled,
     user,
     status,
+    loaded: !user || loadedFor === user.uid,
     conflict,
     keepAccountPlan: () => {
       if (!conflict) return
