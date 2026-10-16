@@ -117,8 +117,8 @@ export function unplace(student: StudentData, code: string): StudentData {
 }
 
 /**
- * Semesters a planned subject can move to: the semester it's offered in, after every prerequisite is passed
- * or planned, from `from` (the semester in progress) to a year past the end of the plan.
+ * Semesters a planned subject can move to: later than where it's planned now, in the semester it's offered,
+ * after every prerequisite is passed or planned, up to a year past the end of the plan.
  */
 export function moveTargets(curriculum: Curriculum, plan: Plan, student: StudentData, code: string, from: number): Term[] {
   const subject = curriculum.subjects.find((s) => s.code === code)
@@ -139,9 +139,10 @@ export function moveTargets(curriculum: Curriculum, plan: Plan, student: Student
 
   const last = Math.max(current, ...plannedIndex.values()) + 2
   const targets: Term[] = []
-  for (let i = Math.max(from, after + 1); i <= last; i++) {
+  // Only later: never back before the semester it's in now.
+  for (let i = Math.max(from, after + 1, current + 1); i <= last; i++) {
     const term = termFromIndex(i)
-    if (term.sem === subject.offered_sem && i !== current) targets.push(term)
+    if (term.sem === subject.offered_sem) targets.push(term)
   }
   return targets
 }

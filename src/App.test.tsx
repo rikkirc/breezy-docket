@@ -274,13 +274,15 @@ describe('working subjects', () => {
   test('a later semester\'s subject can be moved to another semester, following prerequisites; undo restores it', async () => {
     const user = userEvent.setup()
     await openDemo(user)
-    // 404 Labor Law Review (Year 4, 2nd sem) needs 205 and 215, both passed: it can move up to Year 3, 2nd sem
+    // 404 Labor Law Review is in Year 4, 2nd sem: it can only move later, to a 2nd sem
     await user.click(screen.getByRole('button', { name: 'Move 404 to another semester' }))
     const targets = screen.getByRole('group', { name: 'Move 404 to' })
-    expect(within(targets).queryByRole('button', { name: 'Year 3, 1st sem' })).not.toBeInTheDocument()
-    await user.click(within(targets).getByRole('button', { name: 'Year 3, 2nd sem' }))
-    expect(within(semester('Year 3, 2nd sem')).getByText('Labor Law Review and Integration')).toBeInTheDocument()
-    expect(within(semester('Year 3, 2nd sem')).getByText(/You moved it here/)).toBeInTheDocument()
+    expect(within(targets).queryByRole('button', { name: 'Year 3, 2nd sem' })).not.toBeInTheDocument()
+    expect(within(targets).queryByRole('button', { name: 'Year 4, 1st sem' })).not.toBeInTheDocument()
+    await user.click(within(targets).getByRole('button', { name: 'Year 5, 2nd sem' }))
+    expect(within(semester('Year 4, 2nd sem')).queryByText('Labor Law Review and Integration')).not.toBeInTheDocument()
+    expect(within(semester('Year 5, 2nd sem')).getByText('Labor Law Review and Integration')).toBeInTheDocument()
+    expect(within(semester('Year 5, 2nd sem')).getByText(/You moved it here/)).toBeInTheDocument()
 
     // 312 needs 305 (planned Year 4, 1st sem): Year 4, 2nd sem or later only
     await user.click(screen.getByRole('button', { name: 'Move 312 to another semester' }))
@@ -288,7 +290,7 @@ describe('working subjects', () => {
     await user.click(within(screen.getByRole('group', { name: 'Move 312 to' })).getByRole('button', { name: 'Cancel' }))
 
     await user.click(screen.getByRole('button', { name: 'Undo the move of 404' }))
-    expect(within(semester('Year 3, 2nd sem')).queryByText('Labor Law Review and Integration')).not.toBeInTheDocument()
+    expect(within(semester('Year 4, 2nd sem')).getByText('Labor Law Review and Integration')).toBeInTheDocument()
   })
 
   test('renaming a subject on the Curriculum tab keeps its results', async () => {

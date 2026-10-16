@@ -31,6 +31,9 @@ jobs:
       # Never publish a build whose tests fail
       - run: npm test
       - run: npm run build
+        env:
+          # The site lives at https://<owner>.github.io/<repository>/
+          BASE_PATH: /${{ github.event.repository.name }}/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
