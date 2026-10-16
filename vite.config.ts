@@ -8,6 +8,8 @@ export default defineConfig(({ command, isPreview }) => ({
   // repository's name, so renaming the repository changes the link with no code change.
   base: command === 'build' || isPreview ? (process.env.BASE_PATH ?? '/curriculum-organizer/') : '/',
   plugins: [react()],
+  // Firebase (accounts) is its own chunk, loaded only when someone uses accounts.
+  build: { chunkSizeWarningLimit: 600 },
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
   },
