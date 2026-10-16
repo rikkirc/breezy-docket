@@ -1143,6 +1143,13 @@ button.google {
   margin-bottom: 0.25rem;
 }
 
+.sign-in-screen .byline {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
 .sign-in-screen .account {
   margin-top: 1rem;
 }

@@ -175,6 +175,7 @@ export function SignInScreen({ account }: { account: Account }) {
   return (
     <section className="sign-in-screen" aria-labelledby="sign-in-heading">
       <h2 id="sign-in-heading">Sign in</h2>
+      <p className="byline">by: RCbreezy©</p>
       <p className="muted">
         Plan the rest of your subjects semester by semester and see when you'll graduate. Sign in to open your plan, or
         create an account to start one.
