@@ -1143,8 +1143,21 @@ button.google {
   margin-bottom: 0.25rem;
 }
 
+.sign-in-screen .brand {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sign-in-screen .tagline {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .sign-in-screen .byline {
-  margin: 0 0 0.75rem;
+  margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--accent);

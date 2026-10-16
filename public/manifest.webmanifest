@@ -1,6 +1,6 @@
 {
-  "name": "Curriculum Organizer",
-  "short_name": "Curriculum",
+  "name": "Breezy Docket",
+  "short_name": "Breezy Docket",
   "description": "Plans a working law student's remaining subjects under a unit cap and shows the earliest graduation term.",
   "start_url": "./",
   "scope": "./",

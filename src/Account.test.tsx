@@ -111,6 +111,8 @@ describe('accounts', () => {
     localStorage.setItem('curriculum-organizer:v1', JSON.stringify(mine))
     render(<App />)
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Breezy Docket' })).toBeInTheDocument()
+    expect(screen.getByText('Breeze your way through every sem, all the way to graduation.')).toBeInTheDocument()
     expect(screen.getByText('by: RCbreezy©')).toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument()
     expect(screen.queryByText('Expected graduation')).not.toBeInTheDocument()
