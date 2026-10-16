@@ -964,3 +964,111 @@ button.chip-remove:hover {
     margin-left: 0;
   }
 }
+
+/* Over the cap */
+
+.cap-text.over {
+  color: var(--bad);
+  font-weight: 700;
+}
+
+.term.has-over {
+  border-color: var(--bad);
+}
+
+.over-cap {
+  margin: 0 0 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: var(--bad-bg);
+  color: var(--bad);
+  display: grid;
+  gap: 0.5rem;
+}
+
+.over-cap p {
+  margin: 0;
+}
+
+.over-cap .muted {
+  color: var(--bad);
+  opacity: 0.85;
+}
+
+.blocked-note {
+  margin: 0.35rem 0 0 3.9rem;
+  color: var(--late);
+}
+
+/* Templates */
+
+.templates-label {
+  font-weight: 600;
+  margin: 0 0 0.5rem !important;
+}
+
+.template-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.template {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.template-load {
+  flex: 1;
+  display: grid;
+  gap: 0.1rem;
+  text-align: left;
+}
+
+.template-name {
+  font-weight: 600;
+}
+
+.save-template input {
+  flex: 1;
+  min-width: 10rem;
+  width: auto !important;
+}
+
+/* Custom cap per semester */
+
+.per-semester summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--accent);
+  min-height: 32px;
+}
+
+.per-semester ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.term-cap {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-weight: 400 !important;
+}
+
+.term-cap input {
+  width: 5.5rem;
+}
+
+@media (max-width: 599px) {
+  .blocked-note {
+    margin-left: 0;
+  }
+}

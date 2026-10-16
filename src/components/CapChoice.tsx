@@ -1,6 +1,17 @@
 import { useId, useState } from 'react'
 import { setCapMode } from '../lib/student'
-import { fullLoadFor, termLabel, type Curriculum, type StudentData } from '../planner'
+import {
+  fullLoadFor,
+  planStart,
+  standardGraduation,
+  termFromIndex,
+  termIndex,
+  termKey,
+  termLabel,
+  type Curriculum,
+  type StudentData,
+  type Term,
+} from '../planner'
 
 interface Props {
   curriculum: Curriculum
@@ -35,13 +46,19 @@ export function CapChoice({ curriculum, student, onChange }: Props) {
         <input type="radio" name={name} checked={!fullLoad} onChange={() => onChange(setCapMode(student, false))} />
         <span>
           <span>
-            <strong>Custom</strong>: the same number every semester
+            <strong>Custom</strong>: choose your units per semester
           </span>
-          <span className="muted small-text">The most units you can take while working.</span>
+          <span className="muted small-text">
+            The most units you can take while working: one number for every semester, or a different one for any
+            semester.
+          </span>
         </span>
       </label>
       {!fullLoad && (
-        <CapInput value={student.unit_caps.default} onChange={(cap) => onChange(setCapMode(student, false, cap))} />
+        <>
+          <CapInput value={student.unit_caps.default} onChange={(cap) => onChange(setCapMode(student, false, cap))} />
+          <PerSemesterCaps curriculum={curriculum} student={student} onChange={onChange} />
+        </>
       )}
     </fieldset>
   )
@@ -65,6 +82,73 @@ function CapInput({ value, onChange }: { value: number; onChange: (cap: number) 
           if (e.target.value !== '' && Number.isInteger(cap) && cap >= 1 && cap <= 30) onChange(cap)
         }}
         onBlur={() => setText(String(value))}
+      />
+    </label>
+  )
+}
+
+/** Custom cap, semester by semester: blank means the number above. */
+function PerSemesterCaps({ curriculum, student, onChange }: Props) {
+  const start = planStart(student)
+  const end = Math.max(termIndex(standardGraduation(curriculum) ?? start), termIndex(start)) + 4
+  const terms: Term[] = []
+  for (let i = termIndex(start); i <= end; i++) terms.push(termFromIndex(i))
+  const set = (term: Term, cap: number | null) => {
+    const byTerm = { ...student.unit_caps.by_term }
+    if (cap === null) delete byTerm[termKey(term)]
+    else byTerm[termKey(term)] = cap
+    onChange({ ...student, unit_caps: { ...student.unit_caps, by_term: byTerm } })
+  }
+  const custom = terms.filter((t) => student.unit_caps.by_term?.[termKey(t)] !== undefined).length
+
+  return (
+    <details className="per-semester" open={custom > 0 || undefined}>
+      <summary>Choose the units for each semester{custom > 0 ? ` (${custom} set)` : ''}</summary>
+      <p className="muted small-text">Leave a semester blank to use {student.unit_caps.default} units.</p>
+      <ul>
+        {terms.map((t) => (
+          <li key={termKey(t)}>
+            <TermCapInput
+              label={termLabel(t)}
+              value={student.unit_caps.by_term?.[termKey(t)]}
+              placeholder={student.unit_caps.default}
+              onChange={(cap) => set(t, cap)}
+            />
+          </li>
+        ))}
+      </ul>
+    </details>
+  )
+}
+
+function TermCapInput({
+  label,
+  value,
+  placeholder,
+  onChange,
+}: {
+  label: string
+  value: number | undefined
+  placeholder: number
+  onChange: (cap: number | null) => void
+}) {
+  const [text, setText] = useState(value === undefined ? '' : String(value))
+  return (
+    <label className="term-cap">
+      <span>{label}</span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={30}
+        value={text}
+        placeholder={String(placeholder)}
+        onChange={(e) => {
+          setText(e.target.value)
+          if (e.target.value === '') return onChange(null)
+          const cap = Number(e.target.value)
+          if (Number.isInteger(cap) && cap >= 1 && cap <= 30) onChange(cap)
+        }}
       />
     </label>
   )

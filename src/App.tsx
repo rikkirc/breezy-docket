@@ -18,7 +18,7 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   const [saved, setSaved] = useState<Saved>(() => loadSaved() ?? initialSaved())
   const [tab, setTab] = useState<Tab>('working')
-  const plan = useMemo(() => planCurriculum(saved.curriculum, saved.student), [saved.curriculum, saved.student])
+  const plan = useMemo(() => planCurriculum(saved.curriculum, saved.student, { overCap: 'flag' }), [saved.curriculum, saved.student])
 
   useEffect(() => save(saved), [saved])
 

@@ -12,6 +12,8 @@ import {
   setCapMode,
   unplace,
   moveTargets,
+  fitTerm,
+  blockedByMoving,
   statusOf,
   termAfterResults,
 } from './student'
@@ -85,5 +87,26 @@ describe('wording', () => {
     expect(describeGap(1)).toBe('1 sem')
     expect(describeGap(2)).toBe('1 year')
     expect(describeGap(5)).toBe('2 years and 1 sem')
+  })
+})
+
+describe('over-cap actions', () => {
+  test('"Fit" keeps what fits the cap (subjects others depend on first) and moves the rest a year later', () => {
+    const plan = planCurriculum(curriculum, demoStudent, { overCap: 'flag' })
+    const fitted = fitTerm(curriculum, plan, demoStudent, { year: 3, sem: 1 }, 12)
+    const moved = Object.keys(fitted.placed ?? {})
+    expect(moved.length).toBeGreaterThan(0)
+    expect(Object.values(fitted.placed ?? {}).every((k) => k === 'Y4-1')).toBe(true)
+    // 214 has subjects waiting on it, so it stays
+    expect(moved).not.toContain('214')
+    const after = planCurriculum(curriculum, fitted, { overCap: 'flag' })
+    expect(after.terms.find((t) => t.term.year === 3 && t.term.sem === 1)!.units).toBeLessThanOrEqual(12)
+  })
+
+  test('moving a subject blocks the subjects that need it in the next two semesters', () => {
+    const plan = planCurriculum(curriculum, demoStudent, { overCap: 'flag' })
+    const blocked = blockedByMoving(curriculum, plan, '305', { year: 4, sem: 1 }).map((b) => b.subject.code)
+    expect(blocked).toContain('312')
+    expect(blockedByMoving(curriculum, plan, '303', { year: 3, sem: 1 })).toEqual([])
   })
 })

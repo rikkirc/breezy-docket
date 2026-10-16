@@ -1,5 +1,5 @@
 // Pure edits on the student's data. Each returns a new object; nothing is changed in place.
-import { nextTerm, termFromIndex, termIndex, termKey, termLabel } from '../planner'
+import { chooseBest, countDependents, nextTerm, termFromIndex, termIndex, termKey, termLabel } from '../planner'
 import type { Attempt, Curriculum, Delay, Plan, Result, StudentData, Subject, SubjectRecord, Term } from '../planner'
 
 export const DEFAULT_CAP = 12
@@ -144,4 +144,43 @@ export function moveTargets(curriculum: Curriculum, plan: Plan, student: Student
     if (term.sem === subject.offered_sem && i !== current) targets.push(term)
   }
   return targets
+}
+
+/**
+ * "Fit to the cap" for one over-cap semester: keeps the subjects the planner would choose (those others
+ * depend on first, then the most units) and moves the rest to their next offering, a year later.
+ * Subjects recorded in that semester stay; they count against the cap.
+ */
+export function fitTerm(curriculum: Curriculum, plan: Plan, student: StudentData, term: Term, cap: number): StudentData {
+  const planned = plan.terms.find((t) => termIndex(t.term) === termIndex(term))
+  if (!planned) return student
+  const byCode = new Map(curriculum.subjects.map((s) => [s.code, s]))
+  const recordedUnits = student.results
+    .filter((r) => r.attempts.some((a) => termIndex(a) === termIndex(term)))
+    .reduce((n, r) => n + (byCode.get(r.code)?.units ?? 0), 0)
+  const subjects = planned.subjects.map((s) => byCode.get(s.code)).filter((s): s is Subject => s !== undefined)
+  const remaining = curriculum.subjects.filter((s) => statusOf(attemptsFor(student, s.code)) !== 'Passed')
+  const context = {
+    dependents: countDependents(remaining),
+    order: new Map(curriculum.subjects.map((s, i) => [s.code, i])),
+  }
+  const keep = new Set(chooseBest(subjects, Math.max(0, cap - recordedUnits), context).map((s) => s.code))
+  return subjects
+    .filter((s) => !keep.has(s.code))
+    .reduce((st, s) => placeSubject(st, s.code, { year: term.year + 1, sem: term.sem }), student)
+}
+
+/** Subjects that need `code` and are planned within the next two semesters after `term`: moving it later blocks them. */
+export function blockedByMoving(curriculum: Curriculum, plan: Plan, code: string, term: Term): { subject: Subject; term: Term }[] {
+  const from = termIndex(term)
+  const blocked: { subject: Subject; term: Term }[] = []
+  for (const t of plan.terms) {
+    const i = termIndex(t.term)
+    if (i <= from || i > from + 2) continue
+    for (const s of t.subjects) {
+      const subject = curriculum.subjects.find((x) => x.code === s.code)
+      if (subject?.prerequisites.includes(code)) blocked.push({ subject, term: t.term })
+    }
+  }
+  return blocked
 }

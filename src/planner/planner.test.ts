@@ -284,3 +284,20 @@ describe('moving subjects', () => {
     expect(termOf('305')).toEqual({ year: 4, sem: 1 })
   })
 })
+
+describe('over the cap: the app flags instead of moving', () => {
+  test('with overCap "flag", subjects stay where prerequisites allow and over-cap terms are reported', () => {
+    const plan = planCurriculum(curriculum, demo, { overCap: 'flag' })
+    const y31 = plan.terms.find((t) => t.term.year === 3 && t.term.sem === 1)!
+    // All of Year 3, 1st sem except 305 (waits for 214), plus the retaken 214
+    expect(y31.units).toBe(16)
+    expect(plan.overloads[0]).toEqual({ term: { year: 3, sem: 1 }, units: 16, cap: 12 })
+    expect(plan.delays.flatMap((d) => d.reasons).some((r) => r.kind === 'unit_cap')).toBe(false)
+  })
+
+  test('the default "fit" mode still moves subjects to respect the cap (SPEC acceptance behaviour)', () => {
+    const plan = planCurriculum(curriculum, demo)
+    expect(plan.overloads).toEqual([])
+    expect(plan.graduation).toEqual({ year: 5, sem: 2 })
+  })
+})

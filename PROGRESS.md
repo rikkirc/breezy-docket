@@ -8,9 +8,16 @@ What's done, what's next, and what's blocked. Newest entries first.
 - **Flow:** (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
 - **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings.
 - **Data:** curriculum and results stay in the browser (localStorage); backups include the curriculum.
-- **Tests:** 79 — planner (27), data edits and wording (8), curriculum edits and recording (10), backup (13), screens in jsdom (21). CI runs lint, type check, tests and build on every push.
+- **Tests:** 89 — planner (29), data edits and wording (10), curriculum edits and recording (10), backup (13), templates (2), screens in jsdom (25). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 (late night) — over-cap flags, templates, per-semester units, move warnings
+- **Over the cap:** subjects no longer move on their own because a semester is full. They stay where prerequisites and offering allow; a semester over its cap turns red with three choices: **Fit to N units** (the app picks what moves to the next offering, keeping subjects others depend on), **Allow N units this sem**, or move subjects yourself (Not this sem / Move…). Planner option `overCap: 'flag'` (the app) vs the default `'fit'` (the SPEC acceptance tests).
+- **Templates:** "Save these subjects as a template" with a name (setup steps 1 and 3, Curriculum tab); saved templates are listed at the start of setup next to the sample JD curriculum, with × to delete. Stored in this browser.
+- **Custom cap:** one number for every semester, plus "Choose the units for each semester" (blank = the usual number).
+- **Move warning:** next to Move… and Not this sem: "If you move this subject, you won't be able to take 305 Commercial Laws I in Year 4, 1st sem." for subjects that need it in the next two semesters.
+- Settings: "Clear my results (keep my curriculum)" with a line explaining how it differs from Start over (kept: it isn't redundant).
 
 ### 2026-10-16 (night) — Move later subjects, Now follows Taking, tab order
 - A semester with subjects marked **Taking** is the **Now** semester (it no longer jumps ahead when everything in it is Taking). "Mark all passed" there also passes the Taking subjects.

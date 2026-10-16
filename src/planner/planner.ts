@@ -1,6 +1,7 @@
 import { nextTerm, parseTermKey, termFromIndex, termIndex, termKey, termLabel } from './terms'
 import type {
   Attempt,
+  Overload,
   Curriculum,
   Delay,
   DelayReason,
@@ -38,6 +39,12 @@ export interface PlanOptions {
   chooser?: Chooser
   /** Let subjects be planned before their standard term to fill spare units. Off in the app. */
   allowEarly?: boolean
+  /**
+   * What to do when a term's subjects add up to more than its cap. "fit" (the default) moves the extra
+   * subjects to a later term. "flag" keeps every subject where its prerequisites and offering allow and
+   * reports the term in `overloads`, so the student decides; the app uses "flag".
+   */
+  overCap?: 'fit' | 'flag'
 }
 
 /** The cap for a term before any per-term override: the default number, or the term's full load. */
@@ -98,6 +105,7 @@ export function planCurriculum(
   options: PlanOptions = {},
 ): Plan {
   const chooser = options.chooser ?? chooseBest
+  const flag = options.overCap === 'flag'
   const subjects = new Map(curriculum.subjects.map((s) => [s.code, s]))
   const order = new Map(curriculum.subjects.map((s, i) => [s.code, i]))
   const start = planStart(student)
@@ -125,6 +133,7 @@ export function planCurriculum(
   const recordedUnits = [...inStartTerm.keys()].reduce((n, code) => n + (subjects.get(code)?.units ?? 0), 0)
 
   const terms: PlannedTerm[] = []
+  const overloads: Overload[] = []
   const plannedIn = new Map<string, Term>()
   let open = [...remaining]
   let term = start
@@ -146,12 +155,13 @@ export function planCurriculum(
         !placedAt.has(s.code) &&
         isOpenNow(s) &&
         (options.allowEarly || termIndex({ year: s.standard_year, sem: s.offered_sem }) <= index) &&
-        s.units <= cap,
+        (flag || s.units <= cap),
     )
     const room = Math.max(0, cap - used - sumUnits(placedHere))
-    const chosen = [...placedHere, ...chooser(candidates, room, context)].sort(
+    const chosen = [...placedHere, ...(flag ? candidates : chooser(candidates, room, context))].sort(
       (a, b) => order.get(a.code)! - order.get(b.code)!,
     )
+    if (used + sumUnits(chosen) > cap) overloads.push({ term, units: used + sumUnits(chosen), cap })
 
     if (chosen.length === 0 && index !== startIndex) {
       // A term with nothing to take only counts as stuck when nothing is waiting for a later standard term.
@@ -197,6 +207,7 @@ export function planCurriculum(
     standardGraduation: standard,
     termsBehind: graduation && standard ? termIndex(graduation) - termIndex(standard) : null,
     delays: findDelays(curriculum, student, terms, plannedIn, start),
+    overloads,
     unplanned,
     ongoing: [...ongoing],
   }
