@@ -56,8 +56,11 @@ describe('student edits', () => {
     const now = termIndex({ year: 3, sem: 1 })
     // 312 needs 305, which is planned in Year 4, 1st sem: Year 4, 2nd sem at the earliest; it's there now
     expect(moveTargets(curriculum, plan, demoStudent, '312', now).map(termLabel)).toEqual(['Year 5, 2nd sem', 'Year 6, 2nd sem'])
-    // 404 needs 205 and 215, both passed: any 2nd sem from now on
-    expect(moveTargets(curriculum, plan, demoStudent, '404', now)[0]).toEqual({ year: 3, sem: 2 })
+    // Never earlier than where a subject is planned now: 404 (planned in a 2nd sem) only gets later 2nd sems
+    const at404 = termIndex(plan.terms.find((t) => t.subjects.some((s) => s.code === '404'))!.term)
+    const targets404 = moveTargets(curriculum, plan, demoStudent, '404', now)
+    expect(targets404.length).toBeGreaterThan(0)
+    expect(targets404.every((t) => termIndex(t) > at404 && t.sem === 2)).toBe(true)
   })
 
   test('the cap mode switches between full load and a fixed number', () => {

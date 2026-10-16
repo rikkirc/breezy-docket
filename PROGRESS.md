@@ -12,6 +12,10 @@ What's done, what's next, and what's blocked. Newest entries first.
 
 ## Log
 
+### 2026-10-16 — Move only forward; link follows the repository name
+- Move… now offers only semesters later than where the subject is planned (still only the semester it's offered in, after its prerequisites).
+- The deploy builds the site for `/<repository name>/`, so renaming the GitHub repository changes the link with no code change.
+
 ### 2026-10-16 (late night) — over-cap flags, templates, per-semester units, move warnings
 - **Over the cap:** subjects no longer move on their own because a semester is full. They stay where prerequisites and offering allow; a semester over its cap turns red with three choices: **Fit to N units** (the app picks what moves to the next offering, keeping subjects others depend on), **Allow N units this sem**, or move subjects yourself (Not this sem / Move…). Planner option `overCap: 'flag'` (the app) vs the default `'fit'` (the SPEC acceptance tests).
 - **Templates:** "Save these subjects as a template" with a name (setup steps 1 and 3, Curriculum tab); saved templates are listed at the start of setup next to the sample JD curriculum, with × to delete. Stored in this browser.
