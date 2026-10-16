@@ -11,6 +11,7 @@ import {
   markAllPassed,
   setAttempts,
   setCap,
+  setCapMode,
   statusOf,
   termAfterResults,
 } from './student'
@@ -55,9 +56,17 @@ describe('student edits', () => {
   })
 
   test('a cap equal to the default is not stored as an override', () => {
-    const raised = setCap(demoStudent, { year: 3, sem: 1 }, 15)
+    const raised = setCap(demoStudent, { year: 3, sem: 1 }, 15, 12)
     expect(raised.unit_caps.by_term?.['Y3-1']).toBe(15)
-    expect(setCap(raised, { year: 3, sem: 1 }, 12).unit_caps.by_term?.['Y3-1']).toBeUndefined()
+    expect(setCap(raised, { year: 3, sem: 1 }, 12, 12).unit_caps.by_term?.['Y3-1']).toBeUndefined()
+  })
+
+  test('the cap mode switches between full load and a fixed number', () => {
+    const full = setCapMode(demoStudent, true)
+    expect(full.unit_caps.full_load).toBe(true)
+    expect(full.unit_caps.default).toBe(12)
+    const fixed = setCapMode(full, false, 15)
+    expect(fixed.unit_caps).toEqual({ ...demoStudent.unit_caps, default: 15 })
   })
 
   test('the term after the results', () => {

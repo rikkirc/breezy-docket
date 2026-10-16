@@ -43,7 +43,13 @@ export interface SubjectRecord {
 export interface StudentData {
   student?: { name: string; program: string }
   unit_caps: {
+    /** The cap for every semester, unless full_load is on. */
     default: number
+    /**
+     * "Default" cap: each semester's cap is its full load in the curriculum (the units of the subjects
+     * standardly taken in it). Semesters past the standard plan use the largest full load.
+     */
+    full_load?: boolean
     /** Overrides by term, keyed like "Y3-1". */
     by_term?: Record<string, number>
   }

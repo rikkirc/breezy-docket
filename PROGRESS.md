@@ -6,11 +6,16 @@ What's done, what's next, and what's blocked. Newest entries first.
 
 - **Live:** https://rikkirc.github.io/curriculum-organizer/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
 - **Flow:** (1) enter every subject and its units by semester, Year 1 to graduation; (2) tick each subject's prerequisites; (3) review the default plan and set the unit cap; (4) record results as you go ("I'm taking these now", then Passed / Failed); (5) the planner re-plans the rest.
-- **Screens:** setup (3 steps), Plan (graduation, taking now, terms with − / + cap, delay reasons, what-if), Results, Curriculum (edit subjects, prerequisites, default plan any time), Settings (plan-from term, cap, install, backup, clear results / start over / demo).
+- **Screens:** setup (3 steps), Plan (graduation, taking now, terms with − / + cap, delay reasons, what-if), Working Subjects, Curriculum (edit subjects, prerequisites, default plan any time), Settings (plan-from term, cap, install, backup, clear results / start over / demo).
 - **Data:** curriculum and results stay in the browser (localStorage); backups include the curriculum.
-- **Tests:** 72 — planner (17), data edits and wording (8), curriculum edits (10), what-if (8), backup (13), screens in jsdom (16). CI runs lint, type check, tests and build on every push.
+- **Tests:** 78 — planner (20), data edits and wording (9), curriculum edits (10), what-if (8), backup (13), screens in jsdom (18). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 — chips, Working Subjects, Default cap
+- Prerequisites show as boxed chips, each with an × to remove it (Prerequisites step and Curriculum tab). The Default plan review shows them as boxes too, without ×.
+- The Results tab is now **Working Subjects**.
+- Unit cap has two choices (Settings and setup step 3): **Default**, where each semester's cap is its full load in the curriculum (semesters after the standard plan use the largest full load), or **Custom**, one number every semester. The − / + per semester still overrides either.
 
 ### 2026-10-15 (late night) — the student builds the curriculum
 - First visit opens a 3-step setup instead of the demo: Subjects (add code, title, units under each semester; add more years up to Year 8; edit, move or delete), Prerequisites (tick earlier subjects only), Review (default plan, total units, standard graduation, unit cap).

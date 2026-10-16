@@ -12,6 +12,7 @@ import {
 } from '../lib/student'
 import { capFromNow, failThisSem, thisSemSubjects } from '../lib/whatIf'
 import {
+  baseCapFor,
   planCurriculum,
   termFromIndex,
   termIndex,
@@ -170,7 +171,7 @@ export function PlanView({ curriculum, plan: realPlan, student, onChange }: Prop
                 <CapStepper
                   units={t.units}
                   cap={t.cap}
-                  onChange={(cap) => onChange(setCap(student, t.term, cap))}
+                  onChange={(cap) => onChange(setCap(student, t.term, cap, baseCapFor(curriculum, student, t.term)))}
                   label={t.label}
                 />
               )}
@@ -216,7 +217,7 @@ export function PlanView({ curriculum, plan: realPlan, student, onChange }: Prop
                 >
                   I'm taking these now
                 </button>
-                <span className="muted small-text">Taking something else? Record it on Results.</span>
+                <span className="muted small-text">Taking something else? Record it on Working Subjects.</span>
               </div>
             )}
           </li>

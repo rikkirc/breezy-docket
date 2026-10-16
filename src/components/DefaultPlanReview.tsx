@@ -44,7 +44,13 @@ export function DefaultPlanReview({ curriculum }: { curriculum: Curriculum }) {
                   <span className="units">{formatUnits(s.units)}</span>
                 </div>
                 {s.prerequisites.length > 0 && (
-                  <p className="needs small-text">Needs {s.prerequisites.join(', ')}</p>
+                  <ul className="chips" aria-label={`Prerequisites of ${s.code}`}>
+                    {s.prerequisites.map((p) => (
+                      <li key={p} className="chip">
+                        <span className="chip-code">{p}</span>
+                      </li>
+                    ))}
+                  </ul>
                 )}
               </li>
             ))}

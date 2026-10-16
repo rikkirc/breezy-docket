@@ -12,7 +12,7 @@ type Tab = 'plan' | 'results' | 'curriculum' | 'settings'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'plan', label: 'Plan' },
-  { id: 'results', label: 'Results' },
+  { id: 'results', label: 'Working Subjects' },
   { id: 'curriculum', label: 'Curriculum' },
   { id: 'settings', label: 'Settings' },
 ]

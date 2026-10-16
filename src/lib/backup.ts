@@ -61,6 +61,7 @@ function cleanStudent(student: StudentData): StudentData {
     ...(student.student ? { student: student.student } : {}),
     unit_caps: {
       default: student.unit_caps.default,
+      ...(student.unit_caps.full_load ? { full_load: true } : {}),
       by_term: { ...student.unit_caps.by_term },
     },
     next_term: { year: student.next_term.year, sem: student.next_term.sem },
@@ -76,6 +77,7 @@ export function studentProblem(value: unknown): string | null {
   if (!isObject(value)) return 'no student data found.'
   const caps = value.unit_caps
   if (!isObject(caps) || !isCap(caps.default)) return 'the unit cap is missing or not a whole number from 1 to 30.'
+  if (caps.full_load !== undefined && typeof caps.full_load !== 'boolean') return 'the cap setting is not readable.'
   if (caps.by_term !== undefined) {
     if (!isObject(caps.by_term)) return 'the per-semester caps are not readable.'
     for (const [key, cap] of Object.entries(caps.by_term)) {

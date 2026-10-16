@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { jdCurriculum } from '../data'
 import type { Workspace } from '../lib/curriculum'
-import { DEFAULT_CAP } from '../lib/student'
+import { CapChoice } from './CapChoice'
 import { DefaultPlanReview } from './DefaultPlanReview'
 import { PrerequisitesEditor } from './PrerequisitesEditor'
 import { SubjectsEditor } from './SubjectsEditor'
@@ -80,26 +80,14 @@ export function Setup({ workspace, onChange, onFinish, onTryDemo }: Props) {
         <>
           <h2 id="setup-heading">Review your default plan</h2>
           <p className="muted">This is the structure the app plans from. You can change it any time on the Curriculum tab.</p>
-          <label className="card form cap-setting">
-            <span>Most units you can take per semester</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={30}
-              defaultValue={workspace.student.unit_caps.default || DEFAULT_CAP}
-              onChange={(e) => {
-                const cap = Number(e.target.value)
-                if (Number.isInteger(cap) && cap >= 1 && cap <= 30) {
-                  onChange({
-                    ...workspace,
-                    student: { ...workspace.student, unit_caps: { ...workspace.student.unit_caps, default: cap } },
-                  })
-                }
-              }}
+          <div className="card form">
+            <CapChoice
+              curriculum={workspace.curriculum}
+              student={workspace.student}
+              onChange={(student) => onChange({ ...workspace, student })}
             />
-            <span className="muted small-text">While working. You can set a different cap for any semester later.</span>
-          </label>
+            <p className="muted small-text">You can change this, or set a different cap for one semester, later.</p>
+          </div>
           <DefaultPlanReview curriculum={workspace.curriculum} />
         </>
       )}
@@ -116,7 +104,7 @@ export function Setup({ workspace, onChange, onFinish, onTryDemo }: Props) {
           </button>
         ) : (
           <button type="button" className="primary" onClick={onFinish}>
-            Done: record my results
+            Done: go to Working Subjects
           </button>
         )}
       </div>

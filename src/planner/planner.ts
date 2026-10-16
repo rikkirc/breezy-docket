@@ -37,8 +37,26 @@ export interface PlanOptions {
   chooser?: Chooser
 }
 
-export function capFor(student: StudentData, term: Term): number {
-  return student.unit_caps.by_term?.[termKey(term)] ?? student.unit_caps.default
+/** The cap for a term before any per-term override: the default number, or the term's full load. */
+export function baseCapFor(curriculum: Curriculum, student: StudentData, term: Term): number {
+  return student.unit_caps.full_load ? fullLoadFor(curriculum, term) : student.unit_caps.default
+}
+
+export function capFor(curriculum: Curriculum, student: StudentData, term: Term): number {
+  return student.unit_caps.by_term?.[termKey(term)] ?? baseCapFor(curriculum, student, term)
+}
+
+/**
+ * The units of the subjects standardly taken in that term. A term with none (e.g. past the standard plan,
+ * where delayed subjects land) gets the largest full load of any term.
+ */
+export function fullLoadFor(curriculum: Curriculum, term: Term): number {
+  const loads = new Map<number, number>()
+  for (const s of curriculum.subjects) {
+    const i = termIndex({ year: s.standard_year, sem: s.offered_sem })
+    loads.set(i, (loads.get(i) ?? 0) + s.units)
+  }
+  return loads.get(termIndex(term)) || Math.max(0, ...loads.values())
 }
 
 /**
@@ -73,7 +91,7 @@ export function planCurriculum(
   let emptyStreak = 0
 
   while (open.length > 0 && emptyStreak < MAX_EMPTY_TERMS) {
-    const cap = capFor(student, term)
+    const cap = capFor(curriculum, student, term)
     const candidates = open.filter(
       (s) =>
         s.offered_sem === term.sem &&

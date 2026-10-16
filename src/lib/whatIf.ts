@@ -46,5 +46,6 @@ export function capFromNow(student: StudentData, cap: number): StudentData {
       return term !== null && termIndex(term) < termIndex(student.next_term)
     }),
   )
+  // A fixed number every semester, so the full-load setting is dropped too.
   return { ...student, unit_caps: { default: cap, by_term: pastOnly } }
 }
