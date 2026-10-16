@@ -3,6 +3,8 @@ import { subjectMap } from '../data'
 import { formatUnits } from '../lib/curriculum'
 import {
   attemptsFor,
+  blockedByMoving,
+  fitTerm,
   describeDelay,
   describeGap,
   moveTargets,
@@ -18,6 +20,7 @@ import {
   type Term,
   termFromIndex,
   termIndex,
+  termKey,
   termLabel,
   type Attempt,
   type Curriculum,
@@ -43,6 +46,7 @@ const RESULT_LABEL: Record<Result, string> = { Passed: 'Passed', Failed: 'Failed
 export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) {
   const byCode = useMemo(() => subjectMap(curriculum), [curriculum])
   const delays = new Map(plan.delays.map((d) => [d.code, d]))
+  const overloads = new Map(plan.overloads.map((o) => [termIndex(o.term), o]))
   const start = planStart(student)
 
   // Recorded attempts by semester
@@ -94,6 +98,7 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
           const isPast = current === null ? next === undefined : i < current && (i < termIndex(start) || next === undefined)
           const isCurrent = i === current
           const units = done.reduce((n, d) => n + d.subject.units, 0) + (next?.units ?? 0)
+          const over = current !== null && i >= current ? overloads.get(i) : undefined
           const recordedRows = done.map(({ subject, attempt }) => (
             <RecordedRow
               key={`${subject.code}-done`}
@@ -125,16 +130,51 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
             )
           }
           return (
-            <li key={i} className={`card term${isCurrent ? ' current' : ''}`} aria-label={label}>
+            <li key={i} className={`card term${isCurrent ? ' current' : ''}${over ? ' has-over' : ''}`} aria-label={label}>
               <div className="term-head">
                 <h3>
                   {label}
                   {isCurrent && <span className="badge badge-ongoing tag">Now</span>}
                 </h3>
-                <span className="cap-text" aria-label={`Units for ${label}`}>
+                <span className={`cap-text${over ? ' over' : ''}`} aria-label={`Units for ${label}`}>
                   {unitsOf(units, loads.get(i))}
                 </span>
               </div>
+              {over && (
+                <div className="over-cap" role="alert" aria-label={`${label} is over the cap`}>
+                  <p>
+                    <strong>
+                      {formatUnits(over.units)} planned, more than your cap of {over.cap}.
+                    </strong>{' '}
+                    Choose what to do for {label}:
+                  </p>
+                  <div className="row">
+                    <button
+                      type="button"
+                      className="small"
+                      onClick={() => onChange(fitTerm(curriculum, plan, student, term, over.cap))}
+                    >
+                      Fit to {over.cap} units
+                    </button>
+                    <button
+                      type="button"
+                      className="small"
+                      onClick={() =>
+                        onChange({
+                          ...student,
+                          unit_caps: { ...student.unit_caps, by_term: { ...student.unit_caps.by_term, [termKey(term)]: over.units } },
+                        })
+                      }
+                    >
+                      Allow {over.units} units this sem
+                    </button>
+                  </div>
+                  <p className="small-text muted">
+                    "Fit" moves the subjects the app picks to their next offering. Or move subjects yourself with{' '}
+                    {isCurrent ? 'Not this sem' : 'Move…'}.
+                  </p>
+                </div>
+              )}
               <ul className="subjects">
                 {recordedRows}
                 {next?.subjects.map((s) => {
@@ -168,6 +208,9 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                             Undo
                           </button>
                         </p>
+                      )}
+                      {current !== null && i >= current && (
+                        <BlockedNote blocked={blockedByMoving(curriculum, plan, s.code, term)} />
                       )}
                       {current !== null && i > current && (
                         <MovePicker
@@ -267,6 +310,17 @@ function RecordedRow({
         </div>
       )}
     </li>
+  )
+}
+
+/** Next to Move / Not this sem: the subjects that need this one and are planned soon. */
+function BlockedNote({ blocked }: { blocked: { subject: Subject; term: Term }[] }) {
+  if (blocked.length === 0) return null
+  const list = blocked.map((b) => `${b.subject.code} ${b.subject.title} in ${termLabel(b.term)}`)
+  return (
+    <p className="blocked-note small-text">
+      If you move this subject, you won't be able to take {list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} or ${list.at(-1)}`}.
+    </p>
   )
 }
 

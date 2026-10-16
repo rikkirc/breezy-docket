@@ -3,6 +3,7 @@ import { curriculumProblems, type Workspace } from '../lib/curriculum'
 import { DefaultPlanReview } from './DefaultPlanReview'
 import { PrerequisitesEditor } from './PrerequisitesEditor'
 import { SubjectsEditor } from './SubjectsEditor'
+import { SaveTemplate } from './Templates'
 
 type Part = 'subjects' | 'prerequisites' | 'review'
 
@@ -41,6 +42,7 @@ export function CurriculumView({ workspace, onChange }: { workspace: Workspace; 
         />
       )}
       {part === 'review' && <DefaultPlanReview curriculum={workspace.curriculum} />}
+      <SaveTemplate curriculum={workspace.curriculum} />
     </section>
   )
 }

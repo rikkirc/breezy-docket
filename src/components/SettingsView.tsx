@@ -94,7 +94,7 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
         <CapChoice curriculum={curriculum} student={student} onChange={onChange} />
         <p className="muted small-text">Change a single semester with the − / + on the Plan.</p>
 
-        {overrides.length > 0 && (
+        {student.unit_caps.full_load && overrides.length > 0 && (
           <div>
             <span>Semesters with their own cap</span>
             <ul className="overrides">
@@ -186,7 +186,7 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
               }
             }}
           >
-            Clear my results
+            Clear my results (keep my curriculum)
           </button>
           <button
             type="button"
@@ -212,6 +212,10 @@ export function SettingsView({ curriculum, student, isDemo, onChange, onReplace 
             </button>
           )}
         </div>
+        <p className="muted small-text">
+          <strong>Clear my results</strong> erases your Passed, Failed and Taking marks but keeps your subjects and
+          prerequisites. <strong>Start over</strong> erases everything, curriculum included, and goes back to setup.
+        </p>
       </div>
     </section>
   )

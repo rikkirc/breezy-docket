@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { jdCurriculum } from '../data'
 import type { Workspace } from '../lib/curriculum'
 import { CapChoice } from './CapChoice'
 import { DefaultPlanReview } from './DefaultPlanReview'
 import { PrerequisitesEditor } from './PrerequisitesEditor'
 import { SubjectsEditor } from './SubjectsEditor'
+import { SaveTemplate, TemplatePicker } from './Templates'
 
 type Step = 0 | 1 | 2
 
@@ -43,23 +43,16 @@ export function Setup({ workspace, onChange, onFinish, onTryDemo }: Props) {
             Add every subject in your curriculum with its units, under the semester it's taken in the standard
             plan, from Year 1 up to graduation.
           </p>
-          {empty && (
-            <div className="card intro">
-              <p>Studying law? Start from a sample JD curriculum (53 subjects) and edit it to match your school's.</p>
-              <div className="row">
-                <button
-                  type="button"
-                  onClick={() => onChange({ ...workspace, curriculum: jdCurriculum })}
-                >
-                  Use the sample JD curriculum
-                </button>
-                <button type="button" className="link" onClick={onTryDemo}>
-                  Or look around with a demo student
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="card intro">
+            <TemplatePicker hasSubjects={!empty} onLoad={(curriculum) => onChange({ ...workspace, curriculum })} />
+            {empty && (
+              <button type="button" className="link" onClick={onTryDemo}>
+                Or look around with a demo student
+              </button>
+            )}
+          </div>
           <SubjectsEditor workspace={workspace} onChange={onChange} />
+          <SaveTemplate curriculum={workspace.curriculum} />
         </>
       )}
 
@@ -89,6 +82,7 @@ export function Setup({ workspace, onChange, onFinish, onTryDemo }: Props) {
             <p className="muted small-text">You can change this, or set a different cap for one semester, later.</p>
           </div>
           <DefaultPlanReview curriculum={workspace.curriculum} />
+          <SaveTemplate curriculum={workspace.curriculum} />
         </>
       )}
 

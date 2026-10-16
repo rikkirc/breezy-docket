@@ -93,6 +93,14 @@ export interface Delay {
   reasons: DelayReason[]
 }
 
+/** A term whose subjects add up to more units than its cap. */
+export interface Overload {
+  term: Term
+  /** Units of everything in the term: recorded results there plus planned subjects. */
+  units: number
+  cap: number
+}
+
 export interface Plan {
   terms: PlannedTerm[]
   /** The last planned term, or null if some subjects can never be planned. */
@@ -104,6 +112,8 @@ export interface Plan {
   delays: Delay[]
   /** Subjects the planner could not fit anywhere (e.g. more units than the cap, or a prerequisite that is never offered). */
   unplanned: string[]
+  /** Terms over their cap. With overCap "fit" only subjects the student placed can cause this. */
+  overloads: Overload[]
   /** Subjects marked Ongoing, which count as passed for planning. */
   ongoing: string[]
 }
