@@ -1,4 +1,4 @@
-# Progress log
+# Progress log (Breezy Docket)
 
 What's done, what's next, and what's blocked. Newest entries first.
 
@@ -11,6 +11,9 @@ What's done, what's next, and what's blocked. Newest entries first.
 - **Tests:** 104 — planner (29), data edits and wording (10), curriculum edits and recording (10), backup (13), templates (2), sync (5), screens in jsdom (26), account flow (9); plus 5 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-16 — Breezy Docket
+- The app is now **Breezy Docket** (header, browser tab, phone install name). The sign-in screen shows the tagline "Breeze your way through every sem, all the way to graduation." and "by: RCbreezy©". The link stays https://rikkirc.github.io/curriculum-organizer/.
 
 ### 2026-10-16 — Sign-in first, focus notes, Xavier University curriculum
 - **Sign-in screen first:** the app opens on "Sign in" (Google, or email and password, or create an account) and then shows the plan saved in that account. Someone already signed in on the device goes straight to their plan ("Opening your plan…" while it loads). Sign out returns to the sign-in screen and clears the device. A plan already on the device is offered to the account on first sign-in, as before. The "Have an account?" panel in setup is gone.

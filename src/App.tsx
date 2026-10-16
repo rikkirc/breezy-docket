@@ -42,7 +42,7 @@ export default function App() {
   return (
     <>
       <header className="app-header">
-        <h1>Curriculum Organizer</h1>
+        <h1>Breezy Docket</h1>
         {saved.setupDone && signedIn && (
           <nav className="tabs" aria-label="Sections">
             {TABS.map((t) => (

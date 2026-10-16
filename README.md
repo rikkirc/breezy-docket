@@ -1,4 +1,6 @@
-# Curriculum Organizer
+# Breezy Docket
+
+*Breeze your way through every sem, all the way to graduation.* (Formerly "Curriculum Organizer".)
 
 Plans the remaining subjects of a working student into future semesters under a unit cap, and shows the earliest graduation term. The student first builds their own curriculum (subjects, units, prerequisites), or starts from the built-in Xavier University - School of Law curriculum. See [SPEC.md](SPEC.md) for the full plan and [PROGRESS.md](PROGRESS.md) for where things stand.
 
