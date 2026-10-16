@@ -12,12 +12,12 @@ What's done, what's next, and what's blocked. Newest entries first.
 
 ## Log
 
-### 2026-10-16 — Optional accounts (Firebase), waiting on the project
+### 2026-10-16 — Optional accounts (Firebase)
 - Optional sign-in with Google or email and password: Settings → Account, and "Have an account? Sign in" on the first setup screen. Signed in, the plan is kept in the student's account (Firestore `plans/{uid}`) and syncs across devices; edits save shortly after they're made and changes from other devices appear automatically.
 - First sign-in: an empty account takes the device's plan; a blank device takes the account's; if both differ, the student picks which to keep. Sign out clears the device (plan stays in the account). Delete my account removes the stored plan and the account.
 - Security rules (`firestore.rules`): only the signed-in owner can read/write/delete their plan, in the plan's shape only; no listing. Tested on the Firebase emulators (`npm run test:firebase`, in CI).
 - Firebase loads only when accounts are used (separate chunk). `@grpc/grpc-js` pinned to 1.14.6 (npm audit clean).
-- **Not live yet:** needs a Firebase project — see docs/ACCOUNTS.md. Until `src/cloud/config.ts` is filled in, the app has no account option.
+- Firebase project: `curriculum-organizer-ce412` (config in `src/cloud/config.ts`). Setup steps in docs/ACCOUNTS.md.
 
 ### 2026-10-16 — Move only forward; link follows the repository name
 - Move… now offers only semesters later than where the subject is planned (still only the semester it's offered in, after its prerequisites).

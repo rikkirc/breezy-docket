@@ -4,6 +4,9 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import App from './App'
+
+// These tests cover the app without accounts; src/Account.test.tsx covers sign-in.
+vi.mock('./cloud/config', () => ({ firebaseConfig: null }))
 import { demoStudent, jdCurriculum } from './data'
 
 beforeEach(() => localStorage.clear())
