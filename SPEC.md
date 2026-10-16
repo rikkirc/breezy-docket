@@ -13,7 +13,7 @@ Working students can't take a full load, so they fall off the standard 4-year pl
 3. **Unit cap per term:** the student sets the most units they can take each semester (default 12). It can differ by term.
 4. **Automatic plan:** the app plans every remaining subject into future semesters (see "Planning rules").
 5. **Graduation date:** shows the earliest possible graduation term, and how far it is from the standard plan (Year 4, 2nd sem).
-6. **What-if:** "What if I fail X this sem?" and "What if I take 15 units?" Show the new plan and graduation date, without saving.
+6. ~~**What-if:** "What if I fail X this sem?" and "What if I take 15 units?" Show the new plan and graduation date, without saving.~~ **Removed** (Oct 2026): it slowed down the main task, recording results. Working Subjects now shows the effect of a failed subject directly, and each subject marked Taking says what failing it would do to graduation.
 7. **Why is it delayed:** for each delayed subject, say why: a prerequisite not passed yet, only offered in the other semester, or no room under the unit cap.
 8. **Backup:** export and import the student's data as a JSON file.
 
@@ -21,7 +21,7 @@ Working students can't take a full load, so they fall off the standard 4-year pl
 
 ## Data
 
-- `data/jd-curriculum.json`: each subject has `code`, `title`, `units`, `standard_year`, `offered_sem` (1 or 2), and `prerequisites` (a list of subject codes). Subjects with a `check` note need confirming against the official curriculum.
+- `data/jd-curriculum.json`: each subject has `code`, `title`, `units`, `standard_year`, `offered_sem` (1 or 2), and `prerequisites` (a list of subject codes). It is the Xavier University - School of Law curriculum, matching the current official curriculum (an unofficial app, not affiliated with or endorsed by Xavier University).
 - `data/demo-student.json`: a made-up student for tests, screenshots and the live demo. **Never commit a real student's name, ID number or grades.**
 - A subject is defined once. Retakes are extra attempts on the same subject, not duplicate rows.
 - Results (Passed, Failed, Ongoing) are entered by the student. Plan states (On schedule, Delayed) are calculated by the app, never typed in.
@@ -63,7 +63,7 @@ The planner is pure logic with no screens, tested with Vitest.
 
 1. Planner logic and the 5 tests above, with no UI.
 2. Screens: results entry, plan by term, graduation date, delay reasons.
-3. What-if, export/import, PWA install, live deploy.
+3. What-if (later removed), export/import, PWA install, live deploy.
 4. Portfolio: README with screenshots, demo link, short case study.
 
 ## Open questions

@@ -6,6 +6,8 @@ import type { Curriculum } from '../planner'
 
 /** The curriculum that comes with the app. */
 export const XU_LAW = 'Xavier University - School of Law Curriculum'
+export const UNOFFICIAL_NOTE =
+  'Based on the current official curriculum. Unofficial app, not affiliated with or endorsed by Xavier University.'
 
 /** At the start of setup: begin from a saved template or the built-in Xavier University - School of Law curriculum. */
 export function TemplatePicker({
@@ -52,6 +54,7 @@ export function TemplatePicker({
             <span className="muted small-text">
               {jdCurriculum.subjects.length} subjects, {formatUnits(totalUnits(jdCurriculum.subjects))} · for law students
             </span>
+            <span className="unofficial small-text">{UNOFFICIAL_NOTE}</span>
           </button>
         </li>
       </ul>

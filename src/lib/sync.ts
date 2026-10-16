@@ -34,6 +34,13 @@ export function readCloudPlan(value: unknown): CloudPlan | null {
   return { version: 1, curriculum: plan.curriculum!, student: plan.student!, setupDone: plan.setupDone }
 }
 
+/** When the student agreed to the Privacy notice, as stored with their plan (an ISO date-time), if they did. */
+export function readConsent(value: unknown): string | null {
+  if (typeof value !== 'object' || value === null) return null
+  const consentedAt = (value as { consentedAt?: unknown }).consentedAt
+  return typeof consentedAt === 'string' && consentedAt.length > 0 ? consentedAt : null
+}
+
 /** Whether two plans hold the same curriculum, results and settings. */
 export function samePlan(a: CloudPlan, b: CloudPlan): boolean {
   return JSON.stringify(a) === JSON.stringify(b)

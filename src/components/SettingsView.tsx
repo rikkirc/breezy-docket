@@ -12,6 +12,7 @@ import { parseTermKey, termIndex, termLabel, type Curriculum, type StudentData }
 
 interface Props {
   account: Account
+  onPrivacy: () => void
   student: StudentData
   isDemo: boolean
   onChange: (student: StudentData) => void
@@ -20,7 +21,7 @@ interface Props {
   onReplace: (saved: Saved, show?: 'working') => void
 }
 
-export function SettingsView({ account, curriculum, student, isDemo, onChange, onReplace }: Props) {
+export function SettingsView({ account, onPrivacy, curriculum, student, isDemo, onChange, onReplace }: Props) {
   // Caps for semesters already taken no longer affect the plan, so only future ones are listed.
   const overrides = Object.entries(student.unit_caps.by_term ?? {}).filter(([key]) => {
     const term = parseTermKey(key)
@@ -59,7 +60,7 @@ export function SettingsView({ account, curriculum, student, isDemo, onChange, o
   return (
     <section aria-labelledby="settings-heading">
       <h2 id="settings-heading">Settings</h2>
-      <AccountPanel account={account} />
+      <AccountPanel account={account} onPrivacy={onPrivacy} />
 
       <div className="card form">
         <label>
@@ -145,8 +146,10 @@ export function SettingsView({ account, curriculum, student, isDemo, onChange, o
       <div className="card form">
         <h3>Your data</h3>
         <p className="muted">
-          Everything stays in this browser on this device. Nothing is sent anywhere. Export a backup
-          to keep a copy or to move to another phone or computer.
+          {account.enabled
+            ? 'Your plan is kept on this device and in your account. '
+            : 'Everything stays in this browser on this device. Nothing is sent anywhere. '}
+          Export a backup to keep your own copy.
         </p>
         <div className="row">
           <button type="button" onClick={exportBackup}>

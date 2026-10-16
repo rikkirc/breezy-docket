@@ -45,9 +45,20 @@ the data is step 5's rules and step 3's authorized domains.
 
 ## Privacy
 
-Grades are personal data under the Data Privacy Act of 2012. With an account they are stored in Google Firebase
-(Singapore), linked to the student's sign-in and readable only by them. The sign-in panel says so, and students
-can delete everything with **Delete my account**.
+Grades are sensitive personal information under the Data Privacy Act of 2012 (RA 10173). With an account they are
+stored in Google Firebase (the region is the one chosen when the Firestore database was created; check it under
+Firestore Database in the Firebase console), linked to the student's sign-in and readable only by them through the
+app. The in-app **Privacy notice** (linked from the sign-in screen and Settings → Account) explains this.
+
+Before an account is created (Create account, or Continue with Google), the student ticks "I've read the Privacy
+notice and agree…". The date they agreed is saved in their plan document as `consentedAt` (an ISO date-time) and
+kept on every later save. Signing in to an existing account with email doesn't ask again. Students can delete
+everything with **Delete my account**.
+
+**When `firestore.rules` changes, publish it again** (Firestore Database → Rules → paste → Publish). The app
+version that saves `consentedAt` needs the rules that allow it; with the old rules, saves are refused.
+
+The contact address at the end of the notice is `PRIVACY_CONTACT` in `src/components/PrivacyNotice.tsx`.
 
 ## Tests
 

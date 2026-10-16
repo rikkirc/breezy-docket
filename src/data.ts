@@ -5,7 +5,7 @@ import type { Curriculum, StudentData, Subject } from './planner'
 /** The Xavier University - School of Law JD curriculum: a built-in template the student can load and edit, and the demo's curriculum. */
 export const jdCurriculum: Curriculum = {
   program: { name: curriculumJson.program.name },
-  // The JSON's `check` notes are for confirming the sample against the official curriculum, not for students.
+  // Only the fields the planner uses.
   subjects: (curriculumJson as Curriculum).subjects.map((s) => ({
     code: s.code,
     title: s.title,

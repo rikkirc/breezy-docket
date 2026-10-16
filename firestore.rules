@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Security rules for Curriculum Organizer accounts. Paste this whole file into Firebase console →
+// Security rules for Breezy Docket accounts. Paste this whole file into Firebase console →
 // Firestore Database → Rules, then Publish. See docs/ACCOUNTS.md.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -10,8 +10,10 @@ service cloud.firestore {
       function isOwner() { return request.auth != null && request.auth.uid == uid; }
 
       function isPlan(data) {
-        return data.keys().hasOnly(['version', 'curriculum', 'student', 'setupDone', 'updatedAt'])
+        return data.keys().hasOnly(['version', 'curriculum', 'student', 'setupDone', 'updatedAt', 'consentedAt'])
           && data.version == 1
+          // When the student agreed to the Privacy notice: an ISO date-time string, if present.
+          && (!('consentedAt' in data) || (data.consentedAt is string && data.consentedAt.size() > 0 && data.consentedAt.size() <= 40))
           && data.curriculum is map
           && data.student is map
           && data.setupDone is bool

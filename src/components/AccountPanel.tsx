@@ -5,7 +5,7 @@ import type { Account } from '../cloud/useAccount'
 type Mode = 'sign-in' | 'create'
 
 /** Sign in (Google or email), or, when signed in, the account and its sync status. */
-export function AccountPanel({ account }: { account: Account }) {
+export function AccountPanel({ account, onPrivacy }: { account: Account; onPrivacy: () => void }) {
   if (!account.enabled) return null
   return (
     <section className="card form account" aria-labelledby="account-heading">
@@ -13,15 +13,15 @@ export function AccountPanel({ account }: { account: Account }) {
       {account.user === undefined ? (
         <p className="muted">Checking…</p>
       ) : account.user ? (
-        <SignedIn account={account} />
+        <SignedIn account={account} onPrivacy={onPrivacy} />
       ) : (
-        <SignInForm account={account} />
+        <SignInForm account={account} onPrivacy={onPrivacy} />
       )}
     </section>
   )
 }
 
-function SignedIn({ account }: { account: Account }) {
+function SignedIn({ account, onPrivacy }: { account: Account; onPrivacy: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const user = account.user!
   const status = {
@@ -69,12 +69,19 @@ function SignedIn({ account }: { account: Account }) {
           {error}
         </p>
       )}
+      <p className="small-text">
+        <button type="button" className="link" onClick={onPrivacy}>
+          Privacy notice
+        </button>
+      </p>
     </>
   )
 }
 
-function SignInForm({ account }: { account: Account }) {
+function SignInForm({ account, onPrivacy }: { account: Account; onPrivacy: () => void }) {
   const [mode, setMode] = useState<Mode>('sign-in')
+  // Needed before an account can be created (Create account, or Google, which may create one).
+  const [agreed, setAgreed] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -97,7 +104,22 @@ function SignInForm({ account }: { account: Account }) {
   return (
     <>
       <p className="muted">Your plan is kept in your account, so it opens on any device you sign in on.</p>
-      <button type="button" className="google" disabled={busy} onClick={() => attempt(account.signInWithGoogle)}>
+      <label className="consent">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+        <span>
+          I've read the{' '}
+          <button type="button" className="link" onClick={onPrivacy}>
+            Privacy notice
+          </button>{' '}
+          and agree to Breezy Docket keeping my plan and results in my account.
+        </span>
+      </label>
+      <button
+        type="button"
+        className="google"
+        disabled={busy || !agreed}
+        onClick={() => attempt(() => account.signInWithGoogle(agreed))}
+      >
         Continue with Google
       </button>
       <form
@@ -105,7 +127,9 @@ function SignInForm({ account }: { account: Account }) {
         onSubmit={(e) => {
           e.preventDefault()
           void attempt(() =>
-            mode === 'create' ? account.createAccount(email.trim(), password) : account.signInWithEmail(email.trim(), password),
+            mode === 'create'
+              ? account.createAccount(email.trim(), password, agreed)
+              : account.signInWithEmail(email.trim(), password),
           )
         }}
       >
@@ -126,7 +150,7 @@ function SignInForm({ account }: { account: Account }) {
           />
         </label>
         <div className="row">
-          <button type="submit" className="primary" disabled={busy}>
+          <button type="submit" className="primary" disabled={busy || (mode === 'create' && !agreed)}>
             {mode === 'create' ? 'Create account' : 'Sign in'}
           </button>
           <button type="button" className="link" onClick={() => setMode(mode === 'create' ? 'sign-in' : 'create')}>
@@ -163,15 +187,15 @@ function SignInForm({ account }: { account: Account }) {
         </p>
       )}
       <p className="muted small-text">
-        Signing in stores your curriculum, results and settings in Google Firebase, linked to your account, so only you
-        can open them. You can delete them any time with “Delete my account”.
+        You agree once, when you create an account or continue with Google. Signing in to an existing account with your
+        email doesn’t need it again.
       </p>
     </>
   )
 }
 
 /** The first screen when accounts are on: sign in (or create an account) to open your plan. */
-export function SignInScreen({ account }: { account: Account }) {
+export function SignInScreen({ account, onPrivacy }: { account: Account; onPrivacy: () => void }) {
   return (
     <section className="sign-in-screen" aria-labelledby="sign-in-heading">
       <div className="brand">
@@ -183,7 +207,7 @@ export function SignInScreen({ account }: { account: Account }) {
         Plan the rest of your subjects semester by semester and see when you'll graduate. Sign in to open your plan, or
         create an account to start one.
       </p>
-      <AccountPanel account={account} />
+      <AccountPanel account={account} onPrivacy={onPrivacy} />
     </section>
   )
 }

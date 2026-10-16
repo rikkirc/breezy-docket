@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import curriculumJson from '../data/jd-curriculum.json'
 import App from './App'
 
 // These tests cover the app without accounts; src/Account.test.tsx covers sign-in.
@@ -164,7 +165,10 @@ describe('working subjects', () => {
     const tabs = within(screen.getByRole('navigation', { name: 'Sections' })).getAllByRole('button')
     expect(tabs.map((t) => t.textContent)).toEqual(['Settings', 'Curriculum', 'Working Subjects'])
     expect(tabs[2]).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByText(/made-up demo student/)).toBeInTheDocument()
+    expect(screen.getByText(/made-up demo student on the Xavier University - School of Law Curriculum/)).toBeInTheDocument()
+    expect(screen.getByText(/made-up demo student/)).toHaveTextContent(
+      'Based on the current official curriculum. Unofficial app, not affiliated with or endorsed by Xavier University.',
+    )
     expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
     expect(within(graduation()).getByText(/1 year behind the standard plan \(Year 4, 2nd sem\)/)).toBeInTheDocument()
     expect(within(semester('Year 2, 1st sem')).getByRole('button', { name: /214 Corporation and Basic Securities Law: Failed/ })).toBeInTheDocument()
@@ -445,5 +449,18 @@ describe('results and data', () => {
     await user.click(tab('Settings'))
     await user.upload(screen.getByLabelText('Backup file'), new File(['nope'], 'notes.txt', { type: 'application/json' }))
     expect(screen.getByRole('alert')).toHaveTextContent("isn't valid JSON")
+  })
+})
+
+describe('the Xavier University - School of Law template', () => {
+  test('is labelled as unofficial wherever it is offered', () => {
+    render(<App />)
+    expect(screen.getByRole('button', { name: /Xavier University - School of Law Curriculum/ })).toHaveTextContent(
+      'Based on the current official curriculum. Unofficial app, not affiliated with or endorsed by Xavier University.',
+    )
+  })
+
+  test('carries no leftover "check" notes', () => {
+    expect(curriculumJson.subjects.some((s) => 'check' in s)).toBe(false)
   })
 })

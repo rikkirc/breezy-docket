@@ -1166,3 +1166,51 @@ button.google {
 .sign-in-screen .account {
   margin-top: 1rem;
 }
+
+/* Privacy */
+
+.unofficial {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.form label.consent {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.875rem;
+}
+
+.form label.consent > span:first-child {
+  font-weight: 400;
+}
+
+.form .consent input {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-height: 0;
+  padding: 0;
+  margin: 0.1rem 0 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+.consent button.link {
+  min-height: 0;
+  padding: 0;
+}
+
+.privacy {
+  max-width: 40rem;
+}
+
+.privacy-text h3 {
+  font-size: 1rem;
+  margin: 1rem 0 0.25rem;
+}
+
+.privacy-text p {
+  margin: 0;
+}
