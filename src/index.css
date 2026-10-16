@@ -923,3 +923,35 @@ button.chip-remove:hover {
 .term.past details[open] summary {
   margin-bottom: 0.5rem;
 }
+
+/* The current semester's Passed / Failed / Taking / Not this sem buttons: one row on a phone */
+
+.result-buttons {
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+}
+
+.result-buttons button.small {
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 599px) {
+  .result-buttons {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 374px) {
+  .result-buttons {
+    gap: 0.25rem;
+  }
+
+  .result-buttons button.small {
+    padding: 0.2rem 0.3rem;
+    font-size: 0.75rem;
+  }
+}

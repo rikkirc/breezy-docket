@@ -164,7 +164,7 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                         </div>
                       )}
                       {isCurrent && (
-                        <div className="row finish" role="group" aria-label={`Result for ${s.code}`}>
+                        <div className="row finish result-buttons" role="group" aria-label={`Result for ${s.code}`}>
                           {(['Passed', 'Failed', 'Ongoing'] as Result[]).map((r) => (
                             <button key={r} type="button" className="small" onClick={() => onChange(recordResult(student, s.code, term, r))}>
                               {RESULT_LABEL[r]}
