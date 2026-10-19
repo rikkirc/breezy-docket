@@ -19,8 +19,8 @@ export function PrivacyNotice({ onBack }: { onBack: () => void }) {
         <p>On this device, and in your account on Google Firebase. Google's servers may be outside the Philippines.</p>
         <h3>Who can see it</h3>
         <p>
-          Only you, through your account. Google stores it for the app, and the app's developer can access the Firebase
-          project that holds it. It isn't shared, sold or used for ads, and the app has no analytics or tracking.
+          No other student can see your data: in the app, only you can open it, through your account. Google stores it
+          for the app, and the app's developer can access the Firebase project that holds it. It isn't shared, sold or used for ads, and the app has no analytics or tracking.
         </p>
         <h3>How long</h3>
         <p>

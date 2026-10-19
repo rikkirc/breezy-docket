@@ -2,21 +2,26 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-19) — welcome page, sign in, then Working Subjects; summer classes
+## Current state (2026-10-19) — for every student: welcome page, sign in with consent, Working Subjects, summer classes
 
-- **Live:** https://rikkirc.github.io/breezy-docket/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
+- **For:** college, graduate and professional students alike, studying full time or working while they study. The Xavier University - School of Law Curriculum is a built-in template (labelled unofficial); any program can be entered.
+- **Live:** https://rikkirc.github.io/breezy-docket/, deployed by GitHub Actions on every merge to `main` (after the tests pass). Firestore security rules are published automatically when `firestore.rules` changes, after the rules tests pass.
 - **Flow:** (0) a welcome page says what the app does and how to use it; "Get started" → sign in (Google or email; agree to the Privacy notice before creating an account; accounts from before the notice agree once) — then the account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record past semesters first, in order, as they happened, then each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
 - **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings, Privacy notice, How to use. Summer terms when the school offers summer classes.
-- **Data:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; the date the student agreed to the Privacy notice is kept with the plan; backups include the curriculum.
-- **Tests:** 130 — planner (33), data edits and wording (13), curriculum edits and recording (12), backup (14), templates (2), sync (7), screens in jsdom (31), account flow (18); plus 6 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
+- **Data and privacy:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; no other student can see it, and the Privacy notice says the developer can access the Firebase project. Students agree to the notice before creating an account (accounts from before it agree once); the date is kept with the plan as `consentedAt`. Backups include the curriculum.
+- **Tests:** 130 — planner (33), data edits and wording (13), curriculum edits and recording (12), backup (14), templates (2), sync (7), screens in jsdom (31), account flow (18); plus 6 Firebase emulator tests (security rules and account code), also run before every rules publish. CI runs lint, type check, tests and build on every push.
 
 ## Log
 
-### 2026-10-19 — For every student; clearer save error
+### 2026-10-19 — Rules deploy automatically; consistent privacy wording
+- **Firestore rules publish themselves:** the "Firestore rules" workflow runs on every merge to `main` that changes `firestore.rules` (and on demand): rules tests on the emulators first, then `scripts/deploy-rules.mjs` publishes the file through the Firebase Rules API. The service account only has the Firebase Rules Admin role (it can't read data); its key is the `FIREBASE_RULES_DEPLOY_KEY` repository secret. Setup steps in docs/ACCOUNTS.md. This prevents the earlier problem where the app was newer than the published rules and saves were refused.
+- **Privacy wording matches the notice everywhere:** README now says "No other student can see your data. See the Privacy notice in the app for who can access it."; the Privacy notice, docs/ACCOUNTS.md and the comments in `firestore.rules` no longer say only the student can see the data, since the developer can access the Firebase project.
+
+### 2026-10-19 — For every student; clearer save error (PR #17)
 - The welcome page, README, browser description and install description say the app is for college, graduate and professional students alike (full time or working while studying), not only law students. How to use mentions the Xavier law curriculum as one template and marks the 214 example as a law example.
 - When Firebase refuses a save (permission denied, e.g. security rules older than the app), the message now says "Couldn’t save to your account (permission denied)" instead of "Something went wrong". This was the cause of the agreement prompt failing until the latest `firestore.rules` were published.
 
-### 2026-10-19 — Welcome page, how to use, summer classes, agreement prompt
+### 2026-10-19 — Welcome page, how to use, summer classes, agreement prompt (PR #16)
 - **Welcome page** before sign-in: what the app does, how to use it, then "Get started" → sign-in ("← About Breezy Docket" goes back). How to use is also in Settings.
 - **How to use** stresses recording past semesters first, in order, as they actually happened: a failed subject is marked Failed where it was first taken (not Taking), and the retake is recorded at its next offering. Working Subjects shows a "Start here" note until the first result is recorded.
 - **Summer classes:** "My school offers summer classes" (setup step 1 and Curriculum tab) adds a Summer term to each year; subjects can be summer-only or "Also offered in the summer". Settings → Units per summer (blank = no summer classes) lets the planner use summers, e.g. to retake a failed subject without losing a year. Terms are now 1st sem, 2nd sem, Summer (`Y3-3`); stored data is unchanged. "Behind the standard plan" counts regular semesters (a summer counts with the 2nd sem before it).
@@ -41,7 +46,7 @@ What's done, what's next, and what's blocked. Newest entries first.
 ### 2026-10-16 — Optional accounts (Firebase)
 - Optional sign-in with Google or email and password: Settings → Account, and "Have an account? Sign in" on the first setup screen. Signed in, the plan is kept in the student's account (Firestore `plans/{uid}`) and syncs across devices; edits save shortly after they're made and changes from other devices appear automatically.
 - First sign-in: an empty account takes the device's plan; a blank device takes the account's; if both differ, the student picks which to keep. Sign out clears the device (plan stays in the account). Delete my account removes the stored plan and the account.
-- Security rules (`firestore.rules`): only the signed-in owner can read/write/delete their plan, in the plan's shape only; no listing. Tested on the Firebase emulators (`npm run test:firebase`, in CI).
+- Security rules (`firestore.rules`): through the app, only the signed-in owner can read/write/delete their plan, in the plan's shape only; no listing. Tested on the Firebase emulators (`npm run test:firebase`, in CI).
 - Firebase loads only when accounts are used (separate chunk). `@grpc/grpc-js` pinned to 1.14.6 (npm audit clean).
 - Firebase project: `curriculum-organizer-ce412` (config in `src/cloud/config.ts`). Setup steps in docs/ACCOUNTS.md.
 
