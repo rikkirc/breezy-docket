@@ -8,9 +8,13 @@ What's done, what's next, and what's blocked. Newest entries first.
 - **Flow:** (0) a welcome page says what the app does and how to use it; "Get started" → sign in (Google or email; agree to the Privacy notice before creating an account; accounts from before the notice agree once) — then the account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record past semesters first, in order, as they happened, then each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
 - **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings, Privacy notice, How to use. Summer terms when the school offers summer classes.
 - **Data:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; the date the student agreed to the Privacy notice is kept with the plan; backups include the curriculum.
-- **Tests:** 129 — planner (33), data edits and wording (13), curriculum edits and recording (12), backup (14), templates (2), sync (7), screens in jsdom (31), account flow (17); plus 6 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
+- **Tests:** 130 — planner (33), data edits and wording (13), curriculum edits and recording (12), backup (14), templates (2), sync (7), screens in jsdom (31), account flow (18); plus 6 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-19 — For every student; clearer save error
+- The welcome page, README, browser description and install description say the app is for college, graduate and professional students alike (full time or working while studying), not only law students. How to use mentions the Xavier law curriculum as one template and marks the 214 example as a law example.
+- When Firebase refuses a save (permission denied, e.g. security rules older than the app), the message now says "Couldn’t save to your account (permission denied)" instead of "Something went wrong". This was the cause of the agreement prompt failing until the latest `firestore.rules` were published.
 
 ### 2026-10-19 — Welcome page, how to use, summer classes, agreement prompt
 - **Welcome page** before sign-in: what the app does, how to use it, then "Get started" → sign-in ("← About Breezy Docket" goes back). How to use is also in Settings.
