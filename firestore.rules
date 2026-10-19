@@ -5,7 +5,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Each student's plan is one document, named by their user ID: only they can read, write or delete it.
+    // Each student's plan is one document, named by their user ID: through the app, only they can read, write or
+    // delete it. (These rules govern the app; the project's owner can still see data in the Firebase console.)
     match /plans/{uid} {
       function isOwner() { return request.auth != null && request.auth.uid == uid; }
 

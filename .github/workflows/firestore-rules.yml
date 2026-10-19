@@ -1,0 +1,52 @@
+# Publishes firestore.rules to the Firebase project when a merge to main changes them, after the rules tests pass
+# on the Firebase emulators. Needs the FIREBASE_RULES_DEPLOY_KEY secret (docs/ACCOUNTS.md).
+name: Firestore rules
+
+on:
+  # Also from the Actions tab (Run workflow), e.g. to publish again after fixing the secret
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [firestore.rules]
+
+permissions:
+  contents: read
+
+# One publish at a time, in merge order
+concurrency:
+  group: firestore-rules
+  cancel-in-progress: false
+
+env:
+  FIREBASE_PROJECT: curriculum-organizer-ce412
+
+jobs:
+  test:
+    # The same rules tests as the Tests workflow, so a broken rule is never published
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+      - run: npm run test:firebase
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/deploy-rules.mjs
+        env:
+          FIREBASE_RULES_DEPLOY_KEY: ${{ secrets.FIREBASE_RULES_DEPLOY_KEY }}
