@@ -1,6 +1,6 @@
 // Pure edits on the student's own curriculum (the subjects, their units and prerequisites).
 // Edits that rename or delete a subject also update the student's results, so the two never disagree.
-import { termIndex, termLabel, type Curriculum, type StudentData, type Subject, type Term } from '../planner'
+import { SUMMER, termIndex, termLabel, type Curriculum, type StudentData, type Subject, type Term } from '../planner'
 
 export interface Workspace {
   curriculum: Curriculum
@@ -18,12 +18,21 @@ export function standardTerm(subject: Subject): Term {
   return { year: subject.standard_year, sem: subject.offered_sem }
 }
 
-/** Every term from Year 1, 1st sem through the last year (at least `minYears`), each with its subjects. */
+/** Whether the curriculum uses summers: the school offers summer classes, or a subject is summer-only. */
+export function hasSummer(curriculum: Curriculum): boolean {
+  return curriculum.program.summer === true || curriculum.subjects.some((s) => s.offered_sem === SUMMER)
+}
+
+/**
+ * Every term from Year 1, 1st sem through the last year (at least `minYears`), each with its subjects.
+ * Summers are included when the curriculum uses them.
+ */
 export function termsWithSubjects(curriculum: Curriculum, minYears = 1): { term: Term; subjects: Subject[] }[] {
   const lastYear = Math.max(minYears, ...curriculum.subjects.map((s) => s.standard_year))
+  const sems = hasSummer(curriculum) ? [1, 2, SUMMER] : [1, 2]
   const terms: { term: Term; subjects: Subject[] }[] = []
   for (let year = 1; year <= lastYear; year++) {
-    for (const sem of [1, 2]) {
+    for (const sem of sems) {
       terms.push({ term: { year, sem }, subjects: curriculum.subjects.filter((s) => s.standard_year === year && s.offered_sem === sem) })
     }
   }
@@ -35,6 +44,8 @@ export interface SubjectDraft {
   title: string
   units: number
   term: Term
+  /** Also offered in the summer (not for a summer-only subject). */
+  summer?: boolean
 }
 
 /** Why the draft can't be saved, or null. `originalCode` is the subject being edited, if any. */
@@ -59,6 +70,7 @@ export function addSubject(curriculum: Curriculum, draft: SubjectDraft): Curricu
     standard_year: draft.term.year,
     offered_sem: draft.term.sem,
     prerequisites: [],
+    ...(draft.summer && draft.term.sem !== SUMMER ? { summer: true } : {}),
   }
   return { ...curriculum, subjects: [...curriculum.subjects, subject] }
 }
@@ -69,20 +81,36 @@ export function updateSubject(ws: Workspace, originalCode: string, draft: Subjec
   const rename = (c: string) => (c === originalCode ? code : c)
   const subjects = ws.curriculum.subjects.map((s) =>
     s.code === originalCode
-      ? {
-          ...s,
-          code,
-          title: draft.title.trim(),
-          units: draft.units,
-          standard_year: draft.term.year,
-          offered_sem: draft.term.sem,
-        }
+      ? withSummer(
+          {
+            ...s,
+            code,
+            title: draft.title.trim(),
+            units: draft.units,
+            standard_year: draft.term.year,
+            offered_sem: draft.term.sem,
+          },
+          draft.summer === true && draft.term.sem !== SUMMER,
+        )
       : { ...s, prerequisites: s.prerequisites.map(rename) },
   )
   return {
     curriculum: { ...ws.curriculum, subjects },
     student: { ...ws.student, results: ws.student.results.map((r) => ({ ...r, code: rename(r.code) })) },
   }
+}
+
+function withSummer(subject: Subject, summer: boolean): Subject {
+  const { summer: _, ...rest } = subject
+  return summer ? { ...rest, summer: true } : rest
+}
+
+/** Turns summer classes on or off for the school. Off clears "also offered in summer" from every subject. */
+export function setSummer(curriculum: Curriculum, on: boolean): Curriculum {
+  const program = { ...curriculum.program }
+  if (on) program.summer = true
+  else delete program.summer
+  return { program, subjects: on ? curriculum.subjects : curriculum.subjects.map((s) => withSummer(s, false)) }
 }
 
 /** Deletes a subject, removes it from other subjects' prerequisites, and drops its results. */
@@ -166,7 +194,10 @@ export function curriculumProblem(value: unknown): string | null {
     if (!Number.isInteger(subject.standard_year) || subject.standard_year! < 1 || subject.standard_year! > MAX_YEARS) {
       return `subject ${subject.code} has an invalid year.`
     }
-    if (subject.offered_sem !== 1 && subject.offered_sem !== 2) return `subject ${subject.code} has an invalid semester.`
+    if (subject.offered_sem !== 1 && subject.offered_sem !== 2 && subject.offered_sem !== SUMMER) {
+      return `subject ${subject.code} has an invalid semester.`
+    }
+    if (subject.summer !== undefined && typeof subject.summer !== 'boolean') return `subject ${subject.code} has an invalid summer setting.`
     if (!Array.isArray(subject.prerequisites) || subject.prerequisites.some((p) => typeof p !== 'string')) {
       return `subject ${subject.code} has unreadable prerequisites.`
     }
@@ -177,7 +208,7 @@ export function curriculumProblem(value: unknown): string | null {
 /** Keeps only the fields the app uses. */
 export function cleanCurriculum(curriculum: Curriculum): Curriculum {
   return {
-    program: { name: curriculum.program.name },
+    program: { name: curriculum.program.name, ...(curriculum.program.summer === true ? { summer: true } : {}) },
     subjects: curriculum.subjects.map((s) => ({
       code: s.code,
       title: s.title,
@@ -185,6 +216,7 @@ export function cleanCurriculum(curriculum: Curriculum): Curriculum {
       standard_year: s.standard_year,
       offered_sem: s.offered_sem,
       prerequisites: [...s.prerequisites],
+      ...(s.summer === true ? { summer: true } : {}),
     })),
   }
 }

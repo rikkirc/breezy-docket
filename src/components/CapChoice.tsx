@@ -1,4 +1,5 @@
 import { useId, useState } from 'react'
+import { hasSummer } from '../lib/curriculum'
 import { setCapMode } from '../lib/student'
 import {
   fullLoadFor,
@@ -8,6 +9,7 @@ import {
   termIndex,
   termKey,
   termLabel,
+  SUMMER,
   type Curriculum,
   type StudentData,
   type Term,
@@ -60,7 +62,46 @@ export function CapChoice({ curriculum, student, onChange }: Props) {
           <PerSemesterCaps curriculum={curriculum} student={student} onChange={onChange} />
         </>
       )}
+      {hasSummer(curriculum) && <SummerCap student={student} onChange={onChange} />}
     </fieldset>
+  )
+}
+
+/** Units per summer: blank follows the curriculum (only summer-only subjects), 0 means no summer classes. */
+function SummerCap({ student, onChange }: { student: StudentData; onChange: (student: StudentData) => void }) {
+  const value = student.unit_caps.summer
+  const [text, setText] = useState(value === undefined ? '' : String(value))
+  const set = (summer: number | undefined) => {
+    const caps = { ...student.unit_caps }
+    if (summer === undefined) delete caps.summer
+    else caps.summer = summer
+    onChange({ ...student, unit_caps: caps })
+  }
+  return (
+    <div className="summer-cap">
+      <label className="cap-number">
+        <span>Units per summer</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={30}
+          value={text}
+          placeholder="None"
+          onChange={(e) => {
+            setText(e.target.value)
+            if (e.target.value === '') return set(undefined)
+            const cap = Number(e.target.value)
+            if (Number.isInteger(cap) && cap >= 0 && cap <= 30) set(cap)
+          }}
+        />
+      </label>
+      <p className="muted small-text">
+        How many units you can take in a summer. Subjects offered in the summer can then be planned there, such as
+        a failed subject's retake. Leave blank if you won't take summer classes (subjects only offered in the summer
+        still go there).
+      </p>
+    </div>
   )
 }
 
@@ -92,7 +133,8 @@ function PerSemesterCaps({ curriculum, student, onChange }: Props) {
   const start = planStart(student)
   const end = Math.max(termIndex(standardGraduation(curriculum) ?? start), termIndex(start)) + 4
   const terms: Term[] = []
-  for (let i = termIndex(start); i <= end; i++) terms.push(termFromIndex(i))
+  // Summers have their own number (Units per summer).
+  for (let i = termIndex(start); i <= end; i++) if (termFromIndex(i).sem !== SUMMER) terms.push(termFromIndex(i))
   const set = (term: Term, cap: number | null) => {
     const byTerm = { ...student.unit_caps.by_term }
     if (cap === null) delete byTerm[termKey(term)]

@@ -16,6 +16,7 @@ import {
   blockedByMoving,
   statusOf,
   termAfterResults,
+  nextOffering,
 } from './student'
 
 describe('student edits', () => {
@@ -46,7 +47,7 @@ describe('student edits', () => {
   })
 
   test('postponing a subject plans it a year later, and undo clears it', () => {
-    const later = postpone(demoStudent, '304', { year: 3, sem: 1 })
+    const later = postpone(curriculum, demoStudent, '304', { year: 3, sem: 1 })
     expect(later.placed).toEqual({ '304': 'Y4-1' })
     expect(unplace(later, '304').placed).toEqual({})
   })
@@ -113,3 +114,37 @@ describe('over-cap actions', () => {
     expect(blockedByMoving(curriculum, plan, '303', { year: 3, sem: 1 })).toEqual([])
   })
 })
+
+describe('summer classes', () => {
+  const summerCurriculum = {
+    program: { name: 'Small', summer: true },
+    subjects: [
+      { code: 'A', title: 'Alpha', units: 3, standard_year: 1, offered_sem: 1, prerequisites: [], summer: true },
+      { code: 'B', title: 'Beta', units: 3, standard_year: 1, offered_sem: 2, prerequisites: [] },
+    ],
+  }
+  const student = freshStudent()
+
+  test('"Not this sem" goes to the summer when the student takes summer classes, else a year later', () => {
+    expect(nextOffering(summerCurriculum, student, 'A', { year: 1, sem: 1 })).toEqual({ year: 2, sem: 1 })
+    const withSummer = { ...student, unit_caps: { ...student.unit_caps, summer: 6 } }
+    expect(nextOffering(summerCurriculum, withSummer, 'A', { year: 1, sem: 1 })).toEqual({ year: 1, sem: 3 })
+    expect(postpone(summerCurriculum, withSummer, 'A', { year: 1, sem: 1 }).placed).toEqual({ A: 'Y1-3' })
+    // B isn't offered in the summer
+    expect(nextOffering(summerCurriculum, withSummer, 'B', { year: 1, sem: 2 })).toEqual({ year: 2, sem: 2 })
+    expect(termLabel({ year: 1, sem: 3 })).toBe('Year 1, Summer')
+  })
+
+  test('the term after the results skips a summer unless the student takes summer classes', () => {
+    const results = [{ code: 'B', attempts: [{ year: 1, sem: 2, result: 'Passed' as const }] }]
+    expect(termAfterResults({ ...student, results })).toEqual({ year: 2, sem: 1 })
+    expect(termAfterResults({ ...student, unit_caps: { default: 12, summer: 6 }, results })).toEqual({ year: 1, sem: 3 })
+  })
+
+  test('delay wording names the summer', () => {
+    const subjects = new Map(summerCurriculum.subjects.map((s) => [s.code, s]))
+    const delay = { code: 'A', standardTerm: { year: 1, sem: 1 }, plannedTerm: { year: 2, sem: 1 }, reasons: [{ kind: 'other_semester' as const, term: { year: 1, sem: 2 } }] }
+    expect(describeDelay(delay, subjects)).toEqual(['Only offered in the 1st sem and the summer.'])
+  })
+})
+

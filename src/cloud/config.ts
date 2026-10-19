@@ -13,3 +13,15 @@ export const firebaseConfig: FirebaseOptions | null = {
   messagingSenderId: '366778320824',
   appId: '1:366778320824:web:84436f2d8de3882bf8314d',
 }
+
+/**
+ * Local end-to-end testing against the Firebase emulators: build with VITE_FIREBASE_EMULATOR=true. Never set
+ * for the deployed site.
+ */
+export const emulator =
+  import.meta.env.VITE_FIREBASE_EMULATOR === 'true'
+    ? {
+        config: { projectId: 'demo-curriculum', apiKey: 'demo-key', authDomain: 'demo-curriculum.firebaseapp.com' },
+        hosts: { auth: 'http://127.0.0.1:9099', firestoreHost: '127.0.0.1', firestorePort: 8080 },
+      }
+    : undefined

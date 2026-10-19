@@ -2,15 +2,23 @@
 
 What's done, what's next, and what's blocked. Newest entries first.
 
-## Current state (2026-10-16) — sign in first (with a Privacy notice), then Working Subjects
+## Current state (2026-10-19) — welcome page, sign in, then Working Subjects; summer classes
 
 - **Live:** https://rikkirc.github.io/breezy-docket/, deployed by GitHub Actions on every merge to `main` (after the tests pass).
-- **Flow:** (0) sign in (Google or email; agree to the Privacy notice before creating an account) — the app always opens on the sign-in screen and then shows that account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
-- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings, Privacy notice.
+- **Flow:** (0) a welcome page says what the app does and how to use it; "Get started" → sign in (Google or email; agree to the Privacy notice before creating an account; accounts from before the notice agree once) — then the account's plan; (1) enter every subject and its units by semester; (2) tick prerequisites; (3) review the default plan and choose the cap (Default = full load, or Custom); (4) on Working Subjects, record past semesters first, in order, as they happened, then each semester's results as you go; (5) failed subjects and everything that needs them move to their next offering automatically.
+- **Screens:** setup (3 steps), Working Subjects (expected graduation; semesters from Year 1 to graduation with units taken vs the curriculum's load; finished ones folded; the Now one with Passed / Failed / Taking / Not this sem; Move… on later subjects; what moved and why), Curriculum, Settings, Privacy notice, How to use. Summer terms when the school offers summer classes.
 - **Data:** the plan is kept in the student's account (Firestore) and in the browser (localStorage) while signed in; the date the student agreed to the Privacy notice is kept with the plan; backups include the curriculum.
-- **Tests:** 114 — planner (29), data edits and wording (10), curriculum edits and recording (10), backup (13), templates (2), sync (7), screens in jsdom (28), account flow (15); plus 6 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
+- **Tests:** 129 — planner (33), data edits and wording (13), curriculum edits and recording (12), backup (14), templates (2), sync (7), screens in jsdom (31), account flow (17); plus 6 Firebase emulator tests (security rules and account code). CI runs lint, type check, tests and build on every push.
 
 ## Log
+
+### 2026-10-19 — Welcome page, how to use, summer classes, agreement prompt
+- **Welcome page** before sign-in: what the app does, how to use it, then "Get started" → sign-in ("← About Breezy Docket" goes back). How to use is also in Settings.
+- **How to use** stresses recording past semesters first, in order, as they actually happened: a failed subject is marked Failed where it was first taken (not Taking), and the retake is recorded at its next offering. Working Subjects shows a "Start here" note until the first result is recorded.
+- **Summer classes:** "My school offers summer classes" (setup step 1 and Curriculum tab) adds a Summer term to each year; subjects can be summer-only or "Also offered in the summer". Settings → Units per summer (blank = no summer classes) lets the planner use summers, e.g. to retake a failed subject without losing a year. Terms are now 1st sem, 2nd sem, Summer (`Y3-3`); stored data is unchanged. "Behind the standard plan" counts regular semesters (a summer counts with the 2nd sem before it).
+- **Agreement prompt:** signed-in accounts with no agreement date (made before the Privacy notice) see "Please review the Privacy notice" once, with I agree (saves `consentedAt`) or Sign out. Settings → Account shows the date agreed. The agreement given at sign-up is kept until it is written, so an interrupted sign-in doesn't lose it.
+- Checked end to end against the Firebase emulators (the real app in Chromium, email sign-up): `consentedAt` is stored on sign-up and kept through later saves; the prompt writes it for an account without one. Build with `VITE_FIREBASE_EMULATOR=true` to run the app against the emulators.
+- Deploy: a repository named `<owner>.github.io` is served from the root (`/`), any other name from `/<name>/`.
 
 ### 2026-10-16 — Privacy notice, consent, unofficial label
 - **Privacy notice** screen, linked from the sign-in screen and Settings → Account: what the app keeps, where (this device and Google Firebase; servers may be outside the Philippines), who can see it, how long, the student's rights, and grades as sensitive personal information under RA 10173. Checked against the code: no analytics or tracking; the developer can access the Firebase project; saved subject templates stay in the browser after sign-out. Questions and requests go to rikkicabanlet@gmail.com (`PRIVACY_CONTACT`).
@@ -130,6 +138,6 @@ What's done, what's next, and what's blocked. Newest entries first.
 
 ## Known limits
 
-- No summer terms, and the cap is never exceeded (open question in SPEC.md: can a student go over with approval?).
+- The cap is never exceeded automatically (open question in SPEC.md: can a student go over with approval?).
 - No year-standing rules (e.g. review subjects needing all 3rd-year subjects) until the school confirms them.
 - A prerequisite code that isn't in the curriculum is treated as satisfied.

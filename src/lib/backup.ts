@@ -62,6 +62,7 @@ function cleanStudent(student: StudentData): StudentData {
     unit_caps: {
       default: student.unit_caps.default,
       ...(student.unit_caps.full_load ? { full_load: true } : {}),
+      ...(student.unit_caps.summer !== undefined ? { summer: student.unit_caps.summer } : {}),
       by_term: { ...student.unit_caps.by_term },
     },
     next_term: { year: student.next_term.year, sem: student.next_term.sem },
@@ -88,10 +89,11 @@ export function studentProblem(value: unknown): string | null {
   const caps = value.unit_caps
   if (!isObject(caps) || !isCap(caps.default)) return 'the unit cap is missing or not a whole number from 1 to 30.'
   if (caps.full_load !== undefined && typeof caps.full_load !== 'boolean') return 'the cap setting is not readable.'
+  if (caps.summer !== undefined && !(caps.summer === 0 || isCap(caps.summer))) return 'the summer units are not a whole number from 0 to 30.'
   if (caps.by_term !== undefined) {
     if (!isObject(caps.by_term)) return 'the per-semester caps are not readable.'
     for (const [key, cap] of Object.entries(caps.by_term)) {
-      if (!/^Y\d+-[12]$/.test(key) || !isCap(cap)) return `the cap for "${key}" is not valid.`
+      if (!/^Y\d+-[123]$/.test(key) || !isCap(cap)) return `the cap for "${key}" is not valid.`
     }
   }
   if (!isTerm(value.next_term)) return 'the semester to plan from is missing.'
@@ -100,7 +102,7 @@ export function studentProblem(value: unknown): string | null {
     if (moves === undefined) continue
     if (!isObject(moves)) return 'the moved subjects are not readable.'
     for (const [code, key] of Object.entries(moves)) {
-      if (typeof key !== 'string' || !/^Y\d+-[12]$/.test(key)) return `the move of ${code} is not readable.`
+      if (typeof key !== 'string' || !/^Y\d+-[123]$/.test(key)) return `the move of ${code} is not readable.`
     }
   }
   if (!Array.isArray(value.results)) return 'the results list is missing.'
@@ -132,6 +134,6 @@ function isTerm(value: unknown): boolean {
     Number.isInteger(value.year) &&
     (value.year as number) >= 1 &&
     (value.year as number) <= 20 &&
-    (value.sem === 1 || value.sem === 2)
+    (value.sem === 1 || value.sem === 2 || value.sem === 3)
   )
 }

@@ -8,6 +8,7 @@ import {
   describeDelay,
   graduationIfFailed,
   neededNext,
+  nextOffering,
   describeGap,
   moveTargets,
   placeSubject,
@@ -19,6 +20,7 @@ import {
 } from '../lib/student'
 import {
   planStart,
+  SUMMER,
   type Term,
   termFromIndex,
   termIndex,
@@ -91,6 +93,17 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
         Working Subjects
       </h2>
       <Graduation plan={plan} passedUnits={passedUnits} totalUnits={totalUnits} />
+      {student.results.length === 0 && terms.length > 0 && (
+        <div className="card start-here" role="note" aria-label="Start here">
+          <strong>Start here: record your past semesters first.</strong>
+          <p>
+            Begin with {current !== null ? termLabel(termFromIndex(current)) : 'Year 1, 1st sem'} and mark each subject{' '}
+            <em>Passed</em> or <em>Failed</em> as it actually happened, then go on to the next semester. If you failed a
+            subject, mark it Failed where you first took it, not Taking; the app moves it to its next offering, where you
+            record the retake. Mark <em>Taking</em> only for subjects you're enrolled in now.
+          </p>
+        </div>
+      )}
 
       {terms.length === 0 && <p className="empty">Add subjects on the Curriculum tab to see your semesters.</p>}
 
@@ -243,8 +256,8 @@ export function WorkingSubjects({ curriculum, plan, student, onChange }: Props) 
                           <button
                             type="button"
                             className="small"
-                            aria-label={`Not this sem: move ${s.code} to ${termLabel({ year: term.year + 1, sem: term.sem })}`}
-                            onClick={() => onChange(postpone(student, s.code, term))}
+                            aria-label={`Not this sem: move ${s.code} to ${termLabel(nextOffering(curriculum, student, s.code, term))}`}
+                            onClick={() => onChange(postpone(curriculum, student, s.code, term))}
                           >
                             Not this sem
                           </button>
@@ -414,7 +427,9 @@ function Graduation({ plan, passedUnits, totalUnits }: { plan: Plan; passedUnits
           ? `${describeGap(behind)} behind the standard plan (${standard}).`
           : behind < 0
             ? `${describeGap(-behind)} ahead of the standard plan (${standard}).`
-            : 'On schedule with the standard plan.'}{' '}
+            : plan.graduation.sem === SUMMER && plan.standardGraduation?.sem !== SUMMER
+              ? `The summer right after the standard plan (${standard}).`
+              : 'On schedule with the standard plan.'}{' '}
         {passedUnits} of {totalUnits} units passed.
       </p>
     </div>

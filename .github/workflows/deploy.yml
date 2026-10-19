@@ -32,8 +32,9 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          # The site lives at https://<owner>.github.io/<repository>/
-          BASE_PATH: /${{ github.event.repository.name }}/
+          # The site lives at https://<owner>.github.io/<repository>/, or at the root for a repository
+          # named <owner>.github.io.
+          BASE_PATH: ${{ endsWith(github.event.repository.name, '.github.io') && '/' || format('/{0}/', github.event.repository.name) }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

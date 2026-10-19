@@ -7,7 +7,7 @@ import curriculumJson from '../data/jd-curriculum.json'
 import App from './App'
 
 // These tests cover the app without accounts; src/Account.test.tsx covers sign-in.
-vi.mock('./cloud/config', () => ({ firebaseConfig: null }))
+vi.mock('./cloud/config', () => ({ firebaseConfig: null, emulator: undefined }))
 import { demoStudent, jdCurriculum } from './data'
 
 beforeEach(() => localStorage.clear())
@@ -330,6 +330,61 @@ describe('working subjects', () => {
     await user.click(within(section('Year 1, 1st sem')).getByRole('button', { name: 'Save' }))
     await user.click(tab('Working Subjects'))
     expect(within(semester('Year 1, 1st sem')).getByRole('button', { name: /CIV101 Persons and Family Law: Passed/ })).toBeInTheDocument()
+  })
+})
+
+describe('getting started', () => {
+  test('with no results yet, Working Subjects says to record past semesters first, in order', async () => {
+    localStorage.setItem(
+      'curriculum-organizer:v1',
+      JSON.stringify({ curriculum: jdCurriculum, student: { unit_caps: { default: 21 }, next_term: { year: 1, sem: 1 }, results: [] }, isDemo: false, setupDone: true }),
+    )
+    const user = userEvent.setup()
+    render(<App />)
+    const note = screen.getByRole('note', { name: 'Start here' })
+    expect(note).toHaveTextContent('Start here: record your past semesters first.')
+    expect(note).toHaveTextContent('Begin with Year 1, 1st sem')
+    expect(note).toHaveTextContent('mark it Failed where you first took it, not Taking')
+    await user.click(within(screen.getByRole('group', { name: 'Result for 101' })).getByRole('button', { name: 'Passed' }))
+    expect(screen.queryByRole('note', { name: 'Start here' })).not.toBeInTheDocument()
+  })
+
+  test('How to use opens from Settings', async () => {
+    const user = userEvent.setup()
+    await openDemo(user)
+    await user.click(tab('Settings'))
+    await user.click(screen.getByRole('button', { name: 'How to use Breezy Docket' }))
+    expect(screen.getByRole('heading', { name: 'How to use Breezy Docket' })).toBeInTheDocument()
+    expect(screen.getByText(/Mark Taking only for subjects you're enrolled in this semester/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '← Back' }))
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
+  })
+})
+
+describe('summer classes', () => {
+  test('a subject offered in the summer can be retaken there, keeping what needs it on schedule', async () => {
+    const user = userEvent.setup()
+    await openDemo(user)
+    await user.click(tab('Curriculum'))
+    await user.click(screen.getByRole('checkbox', { name: /My school offers summer classes/ }))
+    await user.click(screen.getByRole('button', { name: 'Edit 214 Corporation and Basic Securities Law' }))
+    await user.click(within(section('Year 2, 1st sem')).getByRole('checkbox', { name: 'Also offered in the summer' }))
+    await user.click(within(section('Year 2, 1st sem')).getByRole('button', { name: 'Save' }))
+    expect(screen.getByRole('button', { name: /Edit 214 Corporation and Basic Securities Law/ })).toHaveTextContent('+ summer')
+
+    // No summer units yet: failing 214 again still costs a year
+    await user.click(tab('Working Subjects'))
+    expect(screen.getByRole('button', { name: 'Not this sem: move 214 to Year 4, 1st sem' })).toBeInTheDocument()
+
+    await user.click(tab('Settings'))
+    await user.type(screen.getByLabelText('Units per summer'), '6')
+    await user.click(tab('Working Subjects'))
+    expect(screen.getByRole('button', { name: 'Not this sem: move 214 to Year 3, Summer' })).toBeInTheDocument()
+    await user.click(within(screen.getByRole('group', { name: 'Result for 214' })).getByRole('button', { name: 'Failed' }))
+    expect(within(semester('Year 3, Summer')).getByText('Corporation and Basic Securities Law')).toBeInTheDocument()
+    // 305 Commercial Laws I still goes in Year 4, 1st sem: graduation doesn't move a year
+    expect(within(semester('Year 4, 1st sem')).getByText('Commercial Laws I')).toBeInTheDocument()
+    expect(within(graduation()).getByText('Year 5, 2nd sem')).toBeInTheDocument()
   })
 })
 

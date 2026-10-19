@@ -17,7 +17,7 @@ Working students can't take a full load, so they fall off the standard 4-year pl
 7. **Why is it delayed:** for each delayed subject, say why: a prerequisite not passed yet, only offered in the other semester, or no room under the unit cap.
 8. **Backup:** export and import the student's data as a JSON file.
 
-**Not in v1:** other schools' curricula, summer terms, accounts, cloud sync, grade averages.
+**Not in v1:** other schools' curricula, summer terms, accounts, cloud sync, grade averages. (Accounts, cloud sync and summer terms were added later; see PROGRESS.md.)
 
 ## Data
 

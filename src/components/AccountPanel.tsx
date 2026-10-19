@@ -69,7 +69,10 @@ function SignedIn({ account, onPrivacy }: { account: Account; onPrivacy: () => v
           {error}
         </p>
       )}
-      <p className="small-text">
+      <p className="muted small-text">
+        {account.consentedAt
+          ? `You agreed to the Privacy notice on ${new Date(account.consentedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}.`
+          : 'You haven’t agreed to the Privacy notice yet.'}{' '}
         <button type="button" className="link" onClick={onPrivacy}>
           Privacy notice
         </button>
@@ -195,19 +198,69 @@ function SignInForm({ account, onPrivacy }: { account: Account; onPrivacy: () =>
 }
 
 /** The first screen when accounts are on: sign in (or create an account) to open your plan. */
-export function SignInScreen({ account, onPrivacy }: { account: Account; onPrivacy: () => void }) {
+export function SignInScreen({ account, onPrivacy, onBack }: { account: Account; onPrivacy: () => void; onBack: () => void }) {
   return (
     <section className="sign-in-screen" aria-labelledby="sign-in-heading">
-      <div className="brand">
-        <p className="tagline">Breeze your way through every sem, all the way to graduation.</p>
-        <p className="byline">by: RCbreezy©</p>
-      </div>
+      <button type="button" className="link small-text" onClick={onBack}>
+        ← About Breezy Docket
+      </button>
       <h2 id="sign-in-heading">Sign in</h2>
       <p className="muted">
         Plan the rest of your subjects semester by semester and see when you'll graduate. Sign in to open your plan, or
         create an account to start one.
       </p>
       <AccountPanel account={account} onPrivacy={onPrivacy} />
+    </section>
+  )
+}
+
+/** For accounts made before the Privacy notice: agree once, or sign out. */
+export function ConsentPrompt({ account, onPrivacy }: { account: Account; onPrivacy: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <section className="consent-prompt" aria-labelledby="consent-heading">
+      <div className="card" role="alertdialog" aria-labelledby="consent-heading">
+        <h2 id="consent-heading">Please review the Privacy notice</h2>
+        <p>
+          Breezy Docket now asks everyone to agree to its Privacy notice: what it keeps (your curriculum, results and
+          plan), where, who can see it and how to delete it.
+        </p>
+        <p>
+          <button type="button" className="link" onClick={onPrivacy}>
+            Read the Privacy notice
+          </button>
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            className="primary"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true)
+              setError(null)
+              account
+                .agree()
+                .catch((e: unknown) => setError(message(e)))
+                .finally(() => setBusy(false))
+            }}
+          >
+            I agree
+          </button>
+          <button type="button" disabled={busy} onClick={() => account.signOut().catch((e: unknown) => setError(message(e)))}>
+            Sign out
+          </button>
+        </div>
+        <p className="muted small-text">
+          I agree to Breezy Docket keeping my plan and results in my account. Signed in as{' '}
+          {account.user?.email ?? account.user?.name ?? 'your account'}.
+        </p>
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
     </section>
   )
 }

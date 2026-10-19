@@ -41,7 +41,7 @@ describe('backup', () => {
     ['a bad result', JSON.stringify({ ...demoStudent, results: [{ code: '101', attempts: [{ year: 1, sem: 1, result: 'A+' }] }] }), /attempt for subject 101/],
     ['a duplicate subject', JSON.stringify({ ...demoStudent, results: [demoStudent.results[0], demoStudent.results[0]] }), /appears twice/],
     ['a cap over 30', JSON.stringify({ ...demoStudent, unit_caps: { default: 99 } }), /unit cap/],
-    ['a semester 3', JSON.stringify({ ...demoStudent, next_term: { year: 3, sem: 3 } }), /plan from/],
+    ['a semester 4', JSON.stringify({ ...demoStudent, next_term: { year: 3, sem: 4 } }), /plan from/],
     ['a newer version', JSON.stringify({ app: 'curriculum-organizer', version: 9, student: demoStudent }), /newer version/],
   ])('rejects %s with a clear message', (_, text, message) => {
     expect(() => parseBackup(text)).toThrow(message)
@@ -51,3 +51,20 @@ describe('backup', () => {
     expect(studentProblem(demoStudent)).toBeNull()
   })
 })
+
+describe('backup with summer classes', () => {
+  test('summer units, summer moves and summer results are kept', () => {
+    const student = {
+      ...demoStudent,
+      unit_caps: { default: 12, summer: 6, by_term: { 'Y3-3': 3 } },
+      placed: { '301': 'Y3-3' },
+      results: [...demoStudent.results, { code: '999', attempts: [{ year: 2, sem: 3, result: 'Passed' as const }] }],
+    }
+    expect(studentProblem(student)).toBeNull()
+    const imported = parseBackup(JSON.stringify(makeBackup(jdCurriculum, student)))
+    expect(imported.student.unit_caps).toEqual({ default: 12, summer: 6, by_term: { 'Y3-3': 3 } })
+    expect(imported.student.placed).toEqual({ '301': 'Y3-3' })
+    expect(studentProblem({ ...student, unit_caps: { default: 12, summer: -1 } })).toMatch(/summer units/)
+  })
+})
+

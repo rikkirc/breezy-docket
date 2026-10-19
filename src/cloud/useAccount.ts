@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { initialSaved, type Saved } from '../lib/storage'
 import { decideOnSignIn, fromCloudPlan, isBlank, readCloudPlan, readConsent, toCloudPlan, type CloudPlan } from '../lib/sync'
 import type { AccountUser, Cloud } from './account'
-import { firebaseConfig } from './config'
+import { emulator, firebaseConfig } from './config'
 
 type AccountModule = typeof import('./account')
 
@@ -16,6 +16,12 @@ export interface Account {
   status: SyncStatus
   /** False while a signed-in account's plan is being opened for the first time. */
   loaded: boolean
+  /** When the signed-in student agreed to the Privacy notice (ISO date-time), or null. */
+  consentedAt: string | null
+  /** Signed in, plan opened, and no agreement on record: ask once (accounts made before the notice). */
+  needsConsent: boolean
+  /** Records the agreement now, with the plan. */
+  agree: () => Promise<void>
   /** On sign-in, when this device and the account both have a different plan: which to keep. */
   conflict: CloudPlan | null
   keepAccountPlan: () => void
@@ -42,6 +48,7 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
   const [conflict, setConflict] = useState<CloudPlan | null>(null)
   /** The account whose plan has been opened on this device. */
   const [loadedFor, setLoadedFor] = useState<string | null>(null)
+  const [consentedAt, setConsentedAt] = useState<string | null>(null)
   const module = useRef<AccountModule | null>(null)
   const cloud = useRef<Cloud | null>(null)
   /** The plan as last sent to or received from the account, to avoid echoing it back. */
@@ -64,7 +71,7 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
     void import('./account').then((m) => {
       if (cancelled) return
       module.current = m
-      cloud.current = m.connect(firebaseConfig!)
+      cloud.current = emulator ? m.connect(emulator.config, emulator.hosts) : m.connect(firebaseConfig!)
       stop = m.onUser(cloud.current, setUser)
     })
     return () => {
@@ -93,8 +100,9 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
         if (cancelled) return
         const stored = readCloudPlan(raw)
         const storedConsent = readConsent(raw)
+        // Agreed on this device just now (Create account / Continue with Google), or earlier on any device.
         consent.current = storedConsent ?? pendingConsent.current
-        pendingConsent.current = null
+        setConsentedAt(consent.current)
         const consentToWrite = consent.current !== storedConsent
         const decision = decideOnSignIn(savedRef.current, stored)
         if (decision === 'use-cloud') {
@@ -108,6 +116,8 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
         }
         // A new account with nothing in it yet: record the agreement with an empty plan.
         if (decision === 'none' && consentToWrite) await save(toCloudPlan(savedRef.current))
+        // Kept until it is safely written, so a sign-in that's interrupted doesn't lose the agreement.
+        if (decision !== 'ask') pendingConsent.current = null
         if (decision === 'ask') setConflict(stored)
         ready.current = decision !== 'ask'
         setStatus('synced')
@@ -115,6 +125,7 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
         stopWatching = m.watchPlan(c, user.uid, (value) => {
           // Another device may have recorded the agreement: keep it, so saves from here don't drop it.
           consent.current = readConsent(value) ?? consent.current
+          setConsentedAt(consent.current)
           const plan = readCloudPlan(value)
           if (!plan || !ready.current || JSON.stringify(plan) === lastSynced.current) return
           apply(plan)
@@ -161,6 +172,16 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
     user,
     status,
     loaded: !user || loadedFor === user.uid,
+    consentedAt,
+    needsConsent: !!user && loadedFor === user.uid && consentedAt === null && conflict === null,
+    agree: async () => {
+      if (!user) return
+      const agreedAt = new Date().toISOString()
+      await run((m, c) => m.savePlan(c, user.uid, toCloudPlan(savedRef.current), agreedAt))
+      consent.current = agreedAt
+      lastSynced.current = JSON.stringify(toCloudPlan(savedRef.current))
+      setConsentedAt(agreedAt)
+    },
     conflict,
     keepAccountPlan: () => {
       if (!conflict) return
@@ -168,7 +189,9 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
       setSaved(fromCloudPlan(conflict))
       // Writes the agreement date if it was given on this sign-in (the plan itself is unchanged).
       if (user && module.current && cloud.current && consent.current) {
-        void module.current.savePlan(cloud.current, user.uid, conflict, consent.current).catch(() => setStatus('error'))
+        void module.current
+          .savePlan(cloud.current, user.uid, conflict, consent.current)
+          .then(() => (pendingConsent.current = null), () => setStatus('error'))
       }
       setConflict(null)
       ready.current = true
@@ -201,6 +224,8 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
       ready.current = false
       lastSynced.current = null
       consent.current = null
+      pendingConsent.current = null
+      setConsentedAt(null)
       setConflict(null)
       setStatus('idle')
       setSaved(initialSaved())
@@ -210,6 +235,7 @@ export function useAccount(saved: Saved, setSaved: (saved: Saved) => void): Acco
       await run((m, c) => m.deleteAccount(c, user.uid))
       ready.current = false
       consent.current = null
+      setConsentedAt(null)
       lastSynced.current = null
       setStatus('idle')
       setSaved(initialSaved())

@@ -5,8 +5,10 @@ export interface Subject {
   title: string
   units: number
   standard_year: number
-  /** The only semester the subject runs: 1 or 2. */
+  /** The semester the subject runs in: 1 or 2, or 3 for a summer-only subject. */
   offered_sem: number
+  /** Also offered in the summer, for schools that open subjects then (e.g. to retake a failed one). */
+  summer?: boolean
   /** Codes that must be passed before the subject can be taken. */
   prerequisites: string[]
   /** A note that the subject still needs confirming against the official curriculum. */
@@ -19,6 +21,8 @@ export interface Curriculum {
     terms_per_year?: number
     term_names?: string[]
     note?: string
+    /** The school offers summer classes: summer terms and "also offered in summer" are available. */
+    summer?: boolean
   }
   subjects: Subject[]
 }
@@ -50,7 +54,12 @@ export interface StudentData {
      * standardly taken in it). Semesters past the standard plan use the largest full load.
      */
     full_load?: boolean
-    /** Overrides by term, keyed like "Y3-1". */
+    /**
+     * Most units in a summer. Unset: the summer's load in the curriculum (none unless a subject is
+     * summer-only). 0: no summer classes.
+     */
+    summer?: number
+    /** Overrides by term, keyed like "Y3-1" (a summer is "Y3-3"). */
     by_term?: Record<string, number>
   }
   /** The first term the planner may fill. */
@@ -107,7 +116,7 @@ export interface Plan {
   graduation: Term | null
   /** The last term of the standard plan, or null for an empty curriculum. */
   standardGraduation: Term | null
-  /** How many terms after the standard plan's end the student graduates (0 = on time). */
+  /** How many regular semesters after the standard plan's end the student graduates (0 = on time; a summer counts with the 2nd sem before it). */
   termsBehind: number | null
   delays: Delay[]
   /** Subjects the planner could not fit anywhere (e.g. more units than the cap, or a prerequisite that is never offered). */
