@@ -2,9 +2,10 @@
 export function AppIntro() {
   return (
     <p className="intro-text">
-      Breezy Docket plans the rest of your law subjects semester by semester, under the units you can carry while
-      working, and shows when you'll graduate. When you fail or skip a subject, it moves that subject and everything
-      that needs it, so you can see what to focus on and avoid being extended.
+      Breezy Docket plans the rest of your subjects semester by semester, under the units you can carry, and shows
+      when you'll graduate. It's for college, graduate and professional students alike, whether you study full time
+      or work while you study. When you fail or skip a subject, it moves that subject and everything that needs it, so
+      you can see what to focus on and avoid being extended.
     </p>
   )
 }
@@ -18,14 +19,14 @@ export function HowToUseSteps() {
         and your laptop.
       </li>
       <li>
-        <strong>Set up your curriculum.</strong> Start from the Xavier University - School of Law Curriculum template,
-        or enter your school's subjects, units and prerequisites. If your school offers summer classes, turn them on.
+        <strong>Set up your curriculum.</strong> Enter your program's subjects, units and prerequisites, or start from a
+        template such as the Xavier University - School of Law Curriculum. If your school offers summer classes, turn them on.
       </li>
       <li>
         <strong>Record your past semesters first, in order, as they actually happened.</strong> Start with Year 1, 1st
         sem: mark each subject <em>Passed</em> or <em>Failed</em>, then go on to the next semester, up to now.
         <p className="how-to-example">
-          Example: you took 214 Corporation and Basic Securities Law in Year 2, 1st sem and failed it. Mark it{' '}
+          Example (law): you took 214 Corporation and Basic Securities Law in Year 2, 1st sem and failed it. Mark it{' '}
           <em>Failed</em> in Year 2, 1st sem, not <em>Taking</em>. The app moves it to its next offering, and that's
           where you record the retake.
         </p>

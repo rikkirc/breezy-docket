@@ -18,6 +18,8 @@ const server = vi.hoisted(() => ({
   userListeners: new Set<(user: { uid: string; email: string; name: null } | null) => void>(),
   planListeners: new Map<string, Set<(plan: unknown) => void>>(),
   current: null as { uid: string; email: string; name: null } | null,
+  /** Acts like security rules that refuse every save. */
+  refuseSaves: false,
 }))
 
 vi.mock('./cloud/account', () => {
@@ -47,6 +49,7 @@ vi.mock('./cloud/account', () => {
     signOut: async () => setUser(null),
     loadPlan: async (_c: unknown, uid: string) => server.plans.get(uid) ?? null,
     savePlan: async (_c: unknown, uid: string, plan: object, consentedAt?: string | null) => {
+      if (server.refuseSaves) throw Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' })
       server.plans.set(uid, JSON.parse(JSON.stringify({ ...plan, ...(consentedAt ? { consentedAt } : {}) })))
     },
     watchPlan: (_c: unknown, uid: string, cb: (plan: unknown) => void) => {
@@ -75,6 +78,7 @@ beforeEach(() => {
   server.userListeners.clear()
   server.planListeners.clear()
   server.current = null
+  server.refuseSaves = false
 })
 afterEach(() => {
   cleanup()
@@ -138,6 +142,8 @@ describe('accounts', () => {
     expect(screen.getByRole('heading', { name: 'Breezy Docket' })).toBeInTheDocument()
     expect(screen.getByText('Breeze your way through every sem, all the way to graduation.')).toBeInTheDocument()
     expect(screen.getByText('by: RCbreezy©')).toBeInTheDocument()
+    expect(screen.getByText(/It's for college, graduate and professional students alike/)).toBeInTheDocument()
+    expect(screen.queryByText(/law subjects/)).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'How to use it' })).toBeInTheDocument()
     expect(screen.getByText(/Record your past semesters first, in order, as they actually happened/)).toBeInTheDocument()
     expect(screen.getByText(/took 214 Corporation and Basic Securities Law in Year 2, 1st sem and failed it/)).toHaveTextContent(
@@ -300,6 +306,18 @@ describe('accounts', () => {
     await user.click(within(again).getByRole('button', { name: 'Sign in' }))
     expect(await screen.findByText(/You agreed to the Privacy notice on/)).toBeInTheDocument()
     expect(screen.queryByRole('alertdialog', { name: 'Please review the Privacy notice' })).not.toBeInTheDocument()
+  })
+
+  test('when Firebase refuses the save, the agreement prompt says so plainly', async () => {
+    server.current = { uid: 'google-uid', email: 'student@gmail.com', name: null }
+    server.plans.set('google-uid', toCloudPlan(mine))
+    server.refuseSaves = true
+    const user = userEvent.setup()
+    render(<App />)
+    const prompt = await screen.findByRole('alertdialog', { name: 'Please review the Privacy notice' })
+    await user.click(within(prompt).getByRole('button', { name: 'I agree' }))
+    expect(await within(prompt).findByRole('alert')).toHaveTextContent('Couldn’t save to your account (permission denied).')
+    expect(server.plans.get('google-uid')).not.toHaveProperty('consentedAt')
   })
 
   test('the agreement prompt lets the student sign out instead', async () => {

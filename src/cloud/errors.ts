@@ -14,6 +14,8 @@ const MESSAGES: Record<string, string> = {
   unavailable: 'No connection. Check your internet and try again.',
   'auth/requires-recent-login': 'For your security, sign out, sign in again, then delete your account.',
   'auth/too-many-requests': 'Too many tries. Wait a few minutes and try again.',
+  // Firestore refused the save: usually the security rules in Firebase are older than the app.
+  'permission-denied': 'Couldn’t save to your account (permission denied). Try again later; if it keeps happening, contact the app’s developer.',
   'auth/unauthorized-domain': 'Sign-in isn’t set up for this website yet (add it to Firebase’s authorized domains).',
 }
 
