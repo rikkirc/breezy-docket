@@ -5,7 +5,8 @@ import { planCurriculum, type StudentData } from './planner'
 import { CurriculumView } from './components/CurriculumView'
 import { SettingsView } from './components/SettingsView'
 import { Setup } from './components/Setup'
-import { ConflictPrompt, SignInScreen } from './components/AccountPanel'
+import { ConflictPrompt, ConsentPrompt, SignInScreen } from './components/AccountPanel'
+import { HowToUsePage, Welcome } from './components/HowToUse'
 import { PrivacyNotice } from './components/PrivacyNotice'
 import { UNOFFICIAL_NOTE, XU_LAW } from './components/Templates'
 import { useAccount } from './cloud/useAccount'
@@ -22,7 +23,10 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   const [saved, setSaved] = useState<Saved>(() => loadSaved() ?? initialSaved())
   const [tab, setTab] = useState<Tab>('working')
-  const [privacy, setPrivacy] = useState(false)
+  /** A page shown over everything else: the Privacy notice or How to use. */
+  const [page, setPage] = useState<'privacy' | 'how-to' | null>(null)
+  /** Signed out: the welcome page first, then the sign-in screen after "Get started". */
+  const [started, setStarted] = useState(false)
   const plan = useMemo(() => planCurriculum(saved.curriculum, saved.student, { overCap: 'flag' }), [saved.curriculum, saved.student])
 
   useEffect(() => save(saved), [saved])
@@ -32,13 +36,14 @@ export default function App() {
   const updateWorkspace = ({ curriculum, student }: Workspace) => setSaved((s) => ({ ...s, curriculum, student }))
   const show = (next: Tab) => {
     setTab(next)
-    setPrivacy(false)
+    setPage(null)
     document.scrollingElement?.scrollTo?.(0, 0)
   }
-  const openPrivacy = () => {
-    setPrivacy(true)
+  const open = (next: 'privacy' | 'how-to' | null) => {
+    setPage(next)
     document.scrollingElement?.scrollTo?.(0, 0)
   }
+  const openPrivacy = () => open('privacy')
   const replace = (next: Saved, nextTab?: Tab) => {
     setSaved(next)
     show(nextTab ?? 'working')
@@ -46,12 +51,14 @@ export default function App() {
 
   // With accounts on, the app opens on the sign-in screen and then shows the signed-in account's plan.
   const signedIn = !account.enabled || (!!account.user && account.loaded)
+  // Accounts made before the Privacy notice agree once before anything else.
+  const asking = signedIn && account.needsConsent
 
   return (
     <>
       <header className="app-header">
         <h1>Breezy Docket</h1>
-        {saved.setupDone && signedIn && !privacy && (
+        {saved.setupDone && signedIn && !asking && !page && (
           <nav className="tabs" aria-label="Sections">
             {TABS.map((t) => (
               <button
@@ -69,22 +76,25 @@ export default function App() {
       </header>
 
       <main>
-        {signedIn && <ConflictPrompt account={account} />}
-        {privacy ? (
-          <PrivacyNotice
-            onBack={() => {
-              setPrivacy(false)
-              document.scrollingElement?.scrollTo?.(0, 0)
-            }}
-          />
+        {signedIn && !page && <ConflictPrompt account={account} />}
+        {page === 'privacy' ? (
+          <PrivacyNotice onBack={() => open(null)} />
+        ) : page === 'how-to' ? (
+          <HowToUsePage onBack={() => open(null)} />
         ) : !signedIn ? (
           account.user === null ? (
-            <SignInScreen account={account} onPrivacy={openPrivacy} />
+            started ? (
+              <SignInScreen account={account} onPrivacy={openPrivacy} onBack={() => setStarted(false)} />
+            ) : (
+              <Welcome onStart={() => setStarted(true)} onPrivacy={openPrivacy} />
+            )
           ) : (
             <p className="muted loading" role="status">
               {account.user ? 'Opening your plan…' : 'Loading…'}
             </p>
           )
+        ) : asking ? (
+          <ConsentPrompt account={account} onPrivacy={openPrivacy} />
         ) : !saved.setupDone ? (
           <Setup
             workspace={saved}
@@ -114,6 +124,7 @@ export default function App() {
               <SettingsView
                 account={account}
                 onPrivacy={openPrivacy}
+                onHowTo={() => open('how-to')}
                 curriculum={saved.curriculum}
                 student={saved.student}
                 isDemo={saved.isDemo}

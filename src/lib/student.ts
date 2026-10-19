@@ -1,5 +1,5 @@
 // Pure edits on the student's data. Each returns a new object; nothing is changed in place.
-import { chooseBest, countDependents, nextTerm, planCurriculum, termFromIndex, termIndex, termKey, termLabel } from '../planner'
+import { capFor, chooseBest, countDependents, isOffered, nextTerm, planCurriculum, semName, SEMS_PER_YEAR, SUMMER, termFromIndex, termIndex, termKey, termLabel } from '../planner'
 import type { Attempt, Curriculum, Delay, Plan, Result, StudentData, Subject, SubjectRecord, Term } from '../planner'
 
 export const DEFAULT_CAP = 12
@@ -37,7 +37,9 @@ export function termAfterResults(student: StudentData): Term | null {
   const indexes = student.results.flatMap((r) => r.attempts.map(termIndex))
   if (indexes.length === 0) return null
   const last = Math.max(...indexes)
-  return nextTerm(termFromIndex(last))
+  const next = nextTerm(termFromIndex(last))
+  // A summer only counts when the student takes summer classes.
+  return next.sem === SUMMER && !((student.unit_caps.summer ?? 0) > 0) ? nextTerm(next) : next
 }
 
 /** One plain sentence per kind of reason, e.g. "Needs 214 passed first (not passed by Year 3, 1st sem)." */
@@ -59,7 +61,13 @@ export function describeDelay(delay: Delay, subjects: ReadonlyMap<string, Subjec
   }
 
   if (of('other_semester').length > 0) {
-    lines.push(`Only offered in the ${delay.standardTerm.sem === 1 ? '1st' : '2nd'} sem.`)
+    const subject = subjects.get(delay.code)
+    const sem = delay.standardTerm.sem
+    lines.push(
+      sem === SUMMER
+        ? 'Only offered in the summer.'
+        : `Only offered in the ${semName(sem)}${subject?.summer ? ' and the summer' : ''}.`,
+    )
   }
 
   const full = of('unit_cap')
@@ -104,9 +112,24 @@ export function placeSubject(student: StudentData, code: string, term: Term): St
   return { ...student, placed: { ...student.placed, [code]: termKey(term) } }
 }
 
-/** "Not this sem": the subject (offered in `term`'s semester) goes to the next time it's offered, a year later. */
-export function postpone(student: StudentData, code: string, term: Term): StudentData {
-  return placeSubject(student, code, { year: term.year + 1, sem: term.sem })
+/**
+ * The next term after `term` that the subject runs in and that is open (a summer only when the student
+ * takes summer classes). Usually the same semester a year later.
+ */
+export function nextOffering(curriculum: Curriculum, student: StudentData, code: string, term: Term): Term {
+  const subject = curriculum.subjects.find((s) => s.code === code)
+  if (subject) {
+    for (let i = termIndex(term) + 1; i <= termIndex(term) + 2 * SEMS_PER_YEAR; i++) {
+      const next = termFromIndex(i)
+      if (isOffered(subject, next) && capFor(curriculum, student, next) > 0) return next
+    }
+  }
+  return { year: term.year + 1, sem: term.sem }
+}
+
+/** "Not this sem": the subject goes to the next time it's offered, and the subjects that need it follow. */
+export function postpone(curriculum: Curriculum, student: StudentData, code: string, term: Term): StudentData {
+  return placeSubject(student, code, nextOffering(curriculum, student, code, term))
 }
 
 /** Undoes a move: the app plans the subject again. */
@@ -137,19 +160,19 @@ export function moveTargets(curriculum: Curriculum, plan: Plan, student: Student
     after = Math.max(after, done)
   }
 
-  const last = Math.max(current, ...plannedIndex.values()) + 2
+  const last = Math.max(current, ...plannedIndex.values()) + SEMS_PER_YEAR
   const targets: Term[] = []
   // Only later: never back before the semester it's in now.
   for (let i = Math.max(from, after + 1, current + 1); i <= last; i++) {
     const term = termFromIndex(i)
-    if (term.sem === subject.offered_sem) targets.push(term)
+    if (isOffered(subject, term) && capFor(curriculum, student, term) > 0) targets.push(term)
   }
   return targets
 }
 
 /**
  * "Fit to the cap" for one over-cap semester: keeps the subjects the planner would choose (those others
- * depend on first, then the most units) and moves the rest to their next offering, a year later.
+ * depend on first, then the most units) and moves the rest to their next offering.
  * Subjects recorded in that semester stay; they count against the cap.
  */
 export function fitTerm(curriculum: Curriculum, plan: Plan, student: StudentData, term: Term, cap: number): StudentData {
@@ -168,16 +191,16 @@ export function fitTerm(curriculum: Curriculum, plan: Plan, student: StudentData
   const keep = new Set(chooseBest(subjects, Math.max(0, cap - recordedUnits), context).map((s) => s.code))
   return subjects
     .filter((s) => !keep.has(s.code))
-    .reduce((st, s) => placeSubject(st, s.code, { year: term.year + 1, sem: term.sem }), student)
+    .reduce((st, s) => placeSubject(st, s.code, nextOffering(curriculum, student, s.code, term)), student)
 }
 
-/** Subjects that need `code` and are planned within the next two semesters after `term`: moving it later blocks them. */
+/** Subjects that need `code` and are planned within the next two semesters after `term` (or the summer between): moving it later blocks them. */
 export function blockedByMoving(curriculum: Curriculum, plan: Plan, code: string, term: Term): { subject: Subject; term: Term }[] {
   const from = termIndex(term)
   const blocked: { subject: Subject; term: Term }[] = []
   for (const t of plan.terms) {
     const i = termIndex(t.term)
-    if (i <= from || i > from + 2) continue
+    if (i <= from || i > from + SEMS_PER_YEAR - (term.sem === 1 ? 0 : 1)) continue
     for (const s of t.subjects) {
       const subject = curriculum.subjects.find((x) => x.code === s.code)
       if (subject?.prerequisites.includes(code)) blocked.push({ subject, term: t.term })

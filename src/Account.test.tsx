@@ -9,7 +9,7 @@ import App from './App'
 import { demoStudent, jdCurriculum } from './data'
 import { toCloudPlan } from './lib/sync'
 
-vi.mock('./cloud/config', () => ({ firebaseConfig: { apiKey: 'test', projectId: 'test' } }))
+vi.mock('./cloud/config', () => ({ firebaseConfig: { apiKey: 'test', projectId: 'test' }, emulator: undefined }))
 
 // The stand-in "server": accounts, stored plans, and who is watching.
 const server = vi.hoisted(() => ({
@@ -87,6 +87,14 @@ function tab(name: string) {
 
 const CONSENT = /I've read the Privacy notice and agree/
 
+/** From the welcome page to the sign-in screen. */
+async function getStarted(user: UserEvent) {
+  await user.click(await screen.findByRole('button', { name: 'Get started' }))
+}
+
+/** The plan as stored by someone who agreed to the Privacy notice before. */
+const agreedPlan = () => ({ ...toCloudPlan(mine), consentedAt: '2026-10-01T08:00:00.000Z' })
+
 /** Ticks "I've read the Privacy notice and agree…" on the sign-in screen. */
 async function agree(user: UserEvent) {
   await user.click(await screen.findByRole('checkbox', { name: CONSENT }))
@@ -114,6 +122,7 @@ describe('accounts', () => {
     localStorage.setItem('curriculum-organizer:v1', JSON.stringify(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     await createAccount(user, 'juan@example.com')
     await user.click(await screen.findByRole('button', { name: 'Settings' }))
     await waitFor(() => expect(screen.getByText(/Signed in as/)).toHaveTextContent('juan@example.com'))
@@ -121,20 +130,31 @@ describe('accounts', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Your plan is saved to your account.')
   })
 
-  test('the app opens on the sign-in screen, even with a plan on this device', async () => {
+  test('the app opens on a welcome page that says what it does and how to use it, then the sign-in screen', async () => {
     localStorage.setItem('curriculum-organizer:v1', JSON.stringify(mine))
+    const user = userEvent.setup()
     render(<App />)
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'What it does' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Breezy Docket' })).toBeInTheDocument()
     expect(screen.getByText('Breeze your way through every sem, all the way to graduation.')).toBeInTheDocument()
     expect(screen.getByText('by: RCbreezy©')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'How to use it' })).toBeInTheDocument()
+    expect(screen.getByText(/Record your past semesters first, in order, as they actually happened/)).toBeInTheDocument()
+    expect(screen.getByText(/took 214 Corporation and Basic Securities Law in Year 2, 1st sem and failed it/)).toHaveTextContent(
+      'Mark it Failed in Year 2, 1st sem, not Taking.',
+    )
     expect(screen.queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument()
     expect(screen.queryByText('Expected graduation')).not.toBeInTheDocument()
+
+    await getStarted(user)
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '← About Breezy Docket' }))
+    expect(screen.getByRole('heading', { name: 'What it does' })).toBeInTheDocument()
   })
 
   test('someone still signed in goes straight to the plan in their account', async () => {
     server.current = { uid: 'google-uid', email: 'student@gmail.com', name: null }
-    server.plans.set('google-uid', toCloudPlan(mine))
+    server.plans.set('google-uid', agreedPlan())
     render(<App />)
     await waitFor(() => expect(screen.getByText('Expected graduation')).toBeInTheDocument())
     expect(screen.queryByRole('heading', { name: 'Sign in' })).not.toBeInTheDocument()
@@ -143,6 +163,7 @@ describe('accounts', () => {
   test('creating an account or continuing with Google waits for the Privacy notice to be agreed; signing in does not', async () => {
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     const panel = await screen.findByRole('region', { name: 'Account' })
     const google = within(panel).getByRole('button', { name: 'Continue with Google' })
     expect(google).toBeDisabled()
@@ -161,6 +182,7 @@ describe('accounts', () => {
     const before = Date.now()
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     await createAccount(user, 'ana@example.com')
     await waitFor(() => expect(server.plans.get('uid-ana@example.com')).toHaveProperty('consentedAt'))
     const agreedAt = (server.plans.get('uid-ana@example.com') as { consentedAt: string }).consentedAt
@@ -178,6 +200,7 @@ describe('accounts', () => {
     server.plans.set('uid-juan', { ...toCloudPlan(mine), consentedAt: '2026-10-01T08:00:00.000Z' })
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     const panel = await screen.findByRole('region', { name: 'Account' })
     await user.type(within(panel).getByLabelText('Email'), 'juan@example.com')
     await user.type(within(panel).getByLabelText('Password'), 'pw123456')
@@ -193,13 +216,15 @@ describe('accounts', () => {
     server.plans.set('uid-juan', toCloudPlan(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     const panel = await screen.findByRole('region', { name: 'Account' })
     await user.type(within(panel).getByLabelText('Email'), 'juan@example.com')
     await user.type(within(panel).getByLabelText('Password'), 'pw123456')
     await user.click(within(panel).getByRole('button', { name: 'Sign in' }))
-    await waitFor(() => expect(screen.getByText('Expected graduation')).toBeInTheDocument())
-
+    // No agreement yet, so the prompt shows; then another device records one, and the prompt goes away
+    expect(await screen.findByRole('heading', { name: 'Please review the Privacy notice' })).toBeInTheDocument()
     act(() => remoteSave('uid-juan', { ...toCloudPlan(mine), consentedAt: '2026-10-16T10:00:00.000Z' }))
+    await waitFor(() => expect(screen.getByText('Expected graduation')).toBeInTheDocument())
     await user.click(screen.getByRole('button', { name: 'Not this sem: move 301 to Year 4, 1st sem' }))
     await waitFor(() => expect((server.plans.get('uid-juan') as { student: { placed?: object } }).student.placed).toEqual({ '301': 'Y4-1' }), { timeout: 3000 })
     expect(server.plans.get('uid-juan')).toHaveProperty('consentedAt', '2026-10-16T10:00:00.000Z')
@@ -209,6 +234,7 @@ describe('accounts', () => {
     server.plans.set('google-uid', toCloudPlan(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     await agree(user)
     await user.click(await screen.findByRole('button', { name: 'Continue with Google' }))
     await waitFor(() => expect(server.plans.get('google-uid')).toHaveProperty('consentedAt'))
@@ -219,6 +245,7 @@ describe('accounts', () => {
     server.plans.set('google-uid', toCloudPlan(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     const consent = (await screen.findByRole('checkbox', { name: CONSENT })).closest('label')!
     await user.click(within(consent).getByRole('button', { name: 'Privacy notice' }))
     expect(screen.getByRole('heading', { name: 'Privacy notice' })).toBeInTheDocument()
@@ -239,11 +266,59 @@ describe('accounts', () => {
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument()
   })
 
-  test('a new device opens the plan saved in the account', async () => {
+  test('an account from before the Privacy notice is asked once to agree; the date is saved and shown', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     server.accounts.set('juan@example.com', { uid: 'uid-juan', password: 'pw123456' })
     server.plans.set('uid-juan', toCloudPlan(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
+    const panel = await screen.findByRole('region', { name: 'Account' })
+    await user.type(within(panel).getByLabelText('Email'), 'juan@example.com')
+    await user.type(within(panel).getByLabelText('Password'), 'pw123456')
+    await user.click(within(panel).getByRole('button', { name: 'Sign in' }))
+
+    const prompt = await screen.findByRole('alertdialog', { name: 'Please review the Privacy notice' })
+    expect(screen.queryByRole('navigation', { name: 'Sections' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Expected graduation')).not.toBeInTheDocument()
+    await user.click(within(prompt).getByRole('button', { name: 'Read the Privacy notice' }))
+    expect(screen.getByRole('heading', { name: 'Privacy notice' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '← Back' }))
+
+    await user.click(screen.getByRole('button', { name: 'I agree' }))
+    await waitFor(() => expect(screen.getByText('Expected graduation')).toBeInTheDocument())
+    expect(server.plans.get('uid-juan')).toHaveProperty('consentedAt')
+    expect(storedPlan('uid-juan')).toEqual(toCloudPlan(mine))
+    await user.click(tab('Settings'))
+    expect(screen.getByText(/You agreed to the Privacy notice on/)).toBeInTheDocument()
+
+    // Next sign-in: not asked again
+    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+    const again = await screen.findByRole('region', { name: 'Account' })
+    await user.type(within(again).getByLabelText('Email'), 'juan@example.com')
+    await user.type(within(again).getByLabelText('Password'), 'pw123456')
+    await user.click(within(again).getByRole('button', { name: 'Sign in' }))
+    expect(await screen.findByText(/You agreed to the Privacy notice on/)).toBeInTheDocument()
+    expect(screen.queryByRole('alertdialog', { name: 'Please review the Privacy notice' })).not.toBeInTheDocument()
+  })
+
+  test('the agreement prompt lets the student sign out instead', async () => {
+    server.current = { uid: 'google-uid', email: 'student@gmail.com', name: null }
+    server.plans.set('google-uid', toCloudPlan(mine))
+    const user = userEvent.setup()
+    render(<App />)
+    const prompt = await screen.findByRole('alertdialog', { name: 'Please review the Privacy notice' })
+    await user.click(within(prompt).getByRole('button', { name: 'Sign out' }))
+    expect(await screen.findByRole('heading', { name: 'What it does' })).toBeInTheDocument()
+    expect(server.plans.get('google-uid')).not.toHaveProperty('consentedAt')
+  })
+
+  test('a new device opens the plan saved in the account', async () => {
+    server.accounts.set('juan@example.com', { uid: 'uid-juan', password: 'pw123456' })
+    server.plans.set('uid-juan', agreedPlan())
+    const user = userEvent.setup()
+    render(<App />)
+    await getStarted(user)
     const panel = await screen.findByRole('region', { name: 'Account' })
     await user.type(within(panel).getByLabelText('Email'), 'juan@example.com')
     await user.type(within(panel).getByLabelText('Password'), 'pw123456')
@@ -256,6 +331,7 @@ describe('accounts', () => {
     server.accounts.set('juan@example.com', { uid: 'uid-juan', password: 'pw123456' })
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     const panel = await screen.findByRole('region', { name: 'Account' })
     await user.type(within(panel).getByLabelText('Email'), 'juan@example.com')
     await user.type(within(panel).getByLabelText('Password'), 'wrong-one')
@@ -269,6 +345,7 @@ describe('accounts', () => {
     server.plans.set('google-uid', other)
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     await agree(user)
     await user.click(await screen.findByRole('button', { name: 'Continue with Google' }))
     const prompt = await screen.findByRole('alertdialog', { name: 'Which plan do you want to keep?' })
@@ -281,6 +358,7 @@ describe('accounts', () => {
     server.plans.set('google-uid', toCloudPlan(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     await agree(user)
     await user.click(await screen.findByRole('button', { name: 'Continue with Google' }))
     await waitFor(() => expect(screen.getByText('Expected graduation')).toBeInTheDocument())
@@ -305,6 +383,7 @@ describe('accounts', () => {
     server.plans.set('google-uid', toCloudPlan(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     await agree(user)
     await user.click(await screen.findByRole('button', { name: 'Continue with Google' }))
     await waitFor(() => expect(screen.getByText('Expected graduation')).toBeInTheDocument())
@@ -320,6 +399,7 @@ describe('accounts', () => {
     server.plans.set('google-uid', toCloudPlan(mine))
     const user = userEvent.setup()
     render(<App />)
+    await getStarted(user)
     await agree(user)
     await user.click(await screen.findByRole('button', { name: 'Continue with Google' }))
     await waitFor(() => expect(screen.getByText('Expected graduation')).toBeInTheDocument())

@@ -13,6 +13,7 @@ export const jdCurriculum: Curriculum = {
     standard_year: s.standard_year,
     offered_sem: s.offered_sem,
     prerequisites: s.prerequisites,
+    ...((s as Subject).summer ? { summer: true } : {}),
   })),
 }
 export const demoStudent = demoJson as StudentData

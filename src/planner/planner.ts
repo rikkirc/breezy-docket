@@ -1,4 +1,4 @@
-import { nextTerm, parseTermKey, termFromIndex, termIndex, termKey, termLabel } from './terms'
+import { nextTerm, parseTermKey, semesterPosition, SUMMER, termFromIndex, termIndex, termKey, termLabel } from './terms'
 import type {
   Attempt,
   Overload,
@@ -22,8 +22,13 @@ export function standardGraduation(curriculum: Curriculum): Term | null {
   return last
 }
 
-/** Stop looking once this many terms in a row have nothing that can be planned. */
-const MAX_EMPTY_TERMS = 4
+/** Stop looking once this many terms in a row (two years, summers included) have nothing that can be planned. */
+const MAX_EMPTY_TERMS = 6
+
+/** Whether a subject runs in that term: its own semester, or a summer when it's also offered then. */
+export function isOffered(subject: Subject, term: Term): boolean {
+  return subject.offered_sem === term.sem || (term.sem === SUMMER && subject.summer === true)
+}
 
 /** Picks the subjects to take in one term from the candidates that are open in it. */
 export type Chooser = (candidates: Subject[], cap: number, context: ChooserContext) => Subject[]
@@ -47,8 +52,12 @@ export interface PlanOptions {
   overCap?: 'fit' | 'flag'
 }
 
-/** The cap for a term before any per-term override: the default number, or the term's full load. */
+/**
+ * The cap for a term before any per-term override: the default number, or the term's full load. A summer
+ * has its own cap (see unit_caps.summer); a summer with a cap of 0 is closed.
+ */
 export function baseCapFor(curriculum: Curriculum, student: StudentData, term: Term): number {
+  if (term.sem === SUMMER) return student.unit_caps.summer ?? fullLoadFor(curriculum, term)
   return student.unit_caps.full_load ? fullLoadFor(curriculum, term) : student.unit_caps.default
 }
 
@@ -57,8 +66,8 @@ export function capFor(curriculum: Curriculum, student: StudentData, term: Term)
 }
 
 /**
- * The units of the subjects standardly taken in that term. A term with none (e.g. past the standard plan,
- * where delayed subjects land) gets the largest full load of any term.
+ * The units of the subjects standardly taken in that term. A semester with none (e.g. past the standard
+ * plan, where delayed subjects land) gets the largest full load of any semester; a summer with none gets 0.
  */
 export function fullLoadFor(curriculum: Curriculum, term: Term): number {
   const loads = new Map<number, number>()
@@ -66,7 +75,10 @@ export function fullLoadFor(curriculum: Curriculum, term: Term): number {
     const i = termIndex({ year: s.standard_year, sem: s.offered_sem })
     loads.set(i, (loads.get(i) ?? 0) + s.units)
   }
-  return loads.get(termIndex(term)) || Math.max(0, ...loads.values())
+  const own = loads.get(termIndex(term))
+  if (own || term.sem === SUMMER) return own ?? 0
+  const semesterLoads = [...loads].filter(([i]) => termFromIndex(i).sem !== SUMMER).map(([, units]) => units)
+  return Math.max(0, ...semesterLoads)
 }
 
 /** Where the student placed subjects ("Not this sem", "Move"): code → term index. */
@@ -143,8 +155,10 @@ export function planCurriculum(
     const index = termIndex(term)
     const cap = capFor(curriculum, student, term)
     const used = index === startIndex ? recordedUnits : 0
+    // A term with a cap of 0 (a summer without summer classes) is closed.
     const isOpenNow = (s: Subject) =>
-      s.offered_sem === term.sem &&
+      cap > 0 &&
+      isOffered(s, term) &&
       !(index === startIndex && inStartTerm.has(s.code)) &&
       s.prerequisites.every((p) => done.has(p) || !subjects.has(p))
     // Subjects the student placed in a term go there (or the first term after it their prerequisites allow),
@@ -205,7 +219,7 @@ export function planCurriculum(
     terms,
     graduation,
     standardGraduation: standard,
-    termsBehind: graduation && standard ? termIndex(graduation) - termIndex(standard) : null,
+    termsBehind: graduation && standard ? semesterPosition(graduation) - semesterPosition(standard) : null,
     delays: findDelays(curriculum, student, terms, plannedIn, start),
     overloads,
     unplanned,
@@ -337,11 +351,13 @@ function findDelays(
         continue
       }
       if (i < startIndex) continue
-      if (i < (postponedUntil.get(subject.code) ?? -Infinity) && subject.offered_sem === term.sem) {
+      // Summers only explain a delay when the subject could have been taken then.
+      if (term.sem === SUMMER && (!isOffered(subject, term) || capFor(curriculum, student, term) <= 0)) continue
+      if (i < (postponedUntil.get(subject.code) ?? -Infinity) && isOffered(subject, term)) {
         reasons.push({ kind: 'postponed', term })
         continue
       }
-      if (subject.offered_sem !== term.sem) {
+      if (!isOffered(subject, term)) {
         reasons.push({ kind: 'other_semester', term })
         continue
       }

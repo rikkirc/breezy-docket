@@ -301,3 +301,59 @@ describe('over the cap: the app flags instead of moving', () => {
     expect(plan.graduation).toEqual({ year: 5, sem: 2 })
   })
 })
+
+describe('summer classes', () => {
+  // A small school: B needs A, C needs B; A can also be taken in the summer.
+  const small: Curriculum = {
+    program: { name: 'Small', summer: true },
+    subjects: [
+      { code: 'A', title: 'Alpha', units: 3, standard_year: 1, offered_sem: 1, prerequisites: [], summer: true },
+      { code: 'B', title: 'Beta', units: 3, standard_year: 2, offered_sem: 1, prerequisites: ['A'] },
+      { code: 'C', title: 'Gamma', units: 3, standard_year: 2, offered_sem: 2, prerequisites: ['B'] },
+    ],
+  }
+  const failedA = (summer?: number): StudentData => ({
+    unit_caps: { default: 12, ...(summer !== undefined ? { summer } : {}) },
+    next_term: { year: 1, sem: 2 },
+    results: [{ code: 'A', attempts: [{ year: 1, sem: 1, result: 'Failed' }] }],
+  })
+
+  test('without summer units, a failed subject waits for its next semester offering, a year later', () => {
+    const plan = planCurriculum(small, failedA(), { overCap: 'flag' })
+    expect(plan.terms.map((t) => [t.label, t.subjects.map((s) => s.code)])).toEqual([
+      ['Year 2, 1st sem', ['A']],
+      ['Year 3, 1st sem', ['B']],
+      ['Year 3, 2nd sem', ['C']],
+    ])
+    expect(plan.termsBehind).toBe(2)
+  })
+
+  test('with summer units, the retake goes in the summer and everything after it stays on schedule', () => {
+    const plan = planCurriculum(small, failedA(6), { overCap: 'flag' })
+    expect(plan.terms.map((t) => [t.label, t.subjects.map((s) => s.code)])).toEqual([
+      ['Year 1, Summer', ['A']],
+      ['Year 2, 1st sem', ['B']],
+      ['Year 2, 2nd sem', ['C']],
+    ])
+    expect(plan.graduation).toEqual({ year: 2, sem: 2 })
+    expect(plan.termsBehind).toBe(0)
+  })
+
+  test('a summer-only subject is planned in its summer, and graduating then counts with the 2nd sem', () => {
+    const withPractice: Curriculum = {
+      ...small,
+      subjects: [...small.subjects, { code: 'P', title: 'Practicum', units: 3, standard_year: 2, offered_sem: 3, prerequisites: ['C'] }],
+    }
+    const plan = planCurriculum(withPractice, freshStudent(12), { overCap: 'flag' })
+    expect(plan.terms.at(-1)).toMatchObject({ label: 'Year 2, Summer', units: 3 })
+    expect(capFor(withPractice, freshStudent(12), { year: 2, sem: 3 })).toBe(3)
+    expect(plan.termsBehind).toBe(0)
+  })
+
+  test('a closed summer (no summer units) never gets subjects, and the full-load cap ignores summers', () => {
+    expect(capFor(small, failedA(), { year: 1, sem: 3 })).toBe(0)
+    expect(capFor(small, failedA(0), { year: 1, sem: 3 })).toBe(0)
+    expect(fullLoadFor(small, { year: 5, sem: 1 })).toBe(3)
+    expect(planCurriculum(small, failedA(0), { overCap: 'flag' }).terms.some((t) => t.term.sem === 3)).toBe(false)
+  })
+})

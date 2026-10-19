@@ -3,16 +3,18 @@ import {
   addSubject,
   draftProblem,
   formatUnits,
+  hasSummer,
   MAX_UNITS,
   MAX_YEARS,
   removeSubject,
+  setSummer,
   termsWithSubjects,
   totalUnits,
   updateSubject,
   type SubjectDraft,
   type Workspace,
 } from '../lib/curriculum'
-import { termIndex, termLabel, type Subject, type Term } from '../planner'
+import { SUMMER, termIndex, termLabel, type Subject, type Term } from '../planner'
 
 interface Props {
   workspace: Workspace
@@ -27,9 +29,27 @@ export function SubjectsEditor({ workspace, onChange }: Props) {
   const [addingTo, setAddingTo] = useState<number | null>(null)
   const terms = termsWithSubjects(curriculum, years)
   const lastYear = terms.at(-1)?.term.year ?? years
+  const summer = hasSummer(curriculum)
+  const summerOnly = curriculum.subjects.some((s) => s.offered_sem === SUMMER)
 
   return (
     <div>
+      <label className="card summer-toggle">
+        <input
+          type="checkbox"
+          checked={summer}
+          disabled={summerOnly}
+          onChange={(e) => onChange({ ...workspace, curriculum: setSummer(curriculum, e.target.checked) })}
+        />
+        <span>
+          <strong>My school offers summer classes</strong>
+          <span className="muted small-text">
+            {summerOnly
+              ? 'Some subjects are taken in the summer, so summer terms stay on.'
+              : 'Adds a Summer term to each year, and lets you mark subjects that can also be taken in the summer (for example, to retake a failed subject).'}
+          </span>
+        </span>
+      </label>
       {terms.map(({ term, subjects }) => {
         const index = termIndex(term)
         return (
@@ -43,8 +63,9 @@ export function SubjectsEditor({ workspace, onChange }: Props) {
                 editing === s.code ? (
                   <li key={s.code} className="subject">
                     <SubjectForm
-                      initial={{ code: s.code, title: s.title, units: s.units, term }}
+                      initial={{ code: s.code, title: s.title, units: s.units, term, summer: s.summer === true }}
                       years={lastYear}
+                      summer={summer}
                       submitLabel="Save"
                       problem={(draft) => draftProblem(curriculum, draft, s.code)}
                       onSubmit={(draft) => {
@@ -73,6 +94,7 @@ export function SubjectsEditor({ workspace, onChange }: Props) {
               <SubjectForm
                 initial={{ code: '', title: '', units: 3, term }}
                 years={lastYear}
+                summer={summer}
                 submitLabel="Add"
                 keepOpen
                 problem={(draft) => draftProblem(curriculum, draft)}
@@ -104,6 +126,7 @@ function SubjectRow({ subject, onEdit }: { subject: Subject; onEdit: () => void 
         <span className="code">{subject.code}</span>{' '}
         <span className="title">{subject.title}</span>
         <span className="units">{formatUnits(subject.units)}</span>
+        {subject.summer && <span className="badge tag summer-tag">+ summer</span>}
       </button>
     </li>
   )
@@ -112,6 +135,7 @@ function SubjectRow({ subject, onEdit }: { subject: Subject; onEdit: () => void 
 function SubjectForm({
   initial,
   years,
+  summer,
   submitLabel,
   keepOpen = false,
   problem,
@@ -121,6 +145,8 @@ function SubjectForm({
 }: {
   initial: SubjectDraft
   years: number
+  /** The school offers summer classes. */
+  summer: boolean
   submitLabel: string
   /** Clear the form after submitting, ready for the next subject. */
   keepOpen?: boolean
@@ -133,6 +159,7 @@ function SubjectForm({
   const [title, setTitle] = useState(initial.title)
   const [units, setUnits] = useState(String(initial.units))
   const [term, setTerm] = useState<Term>(initial.term)
+  const [alsoSummer, setAlsoSummer] = useState(initial.summer === true)
   const [error, setError] = useState<string | null>(null)
   const codeInput = useRef<HTMLInputElement>(null)
 
@@ -141,7 +168,7 @@ function SubjectForm({
       className="subject-form"
       onSubmit={(e) => {
         e.preventDefault()
-        const draft = { code, title, units: Number(units), term }
+        const draft = { code, title, units: Number(units), term, summer: summer && alsoSummer }
         const issue = problem(draft)
         if (issue) {
           setError(issue)
@@ -194,9 +221,16 @@ function SubjectForm({
             <select value={term.sem} onChange={(e) => setTerm({ ...term, sem: Number(e.target.value) })}>
               <option value={1}>1st sem</option>
               <option value={2}>2nd sem</option>
+              {summer && <option value={SUMMER}>Summer</option>}
             </select>
           </label>
         </div>
+      )}
+      {summer && term.sem !== SUMMER && (
+        <label className="also-summer">
+          <input type="checkbox" checked={alsoSummer} onChange={(e) => setAlsoSummer(e.target.checked)} />
+          <span>Also offered in the summer</span>
+        </label>
       )}
       {error && (
         <p className="error" role="alert">

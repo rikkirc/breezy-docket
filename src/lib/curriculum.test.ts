@@ -8,7 +8,10 @@ import {
   draftProblem,
   emptyCurriculum,
   formatUnits,
+  hasSummer,
+  cleanCurriculum,
   possiblePrerequisites,
+  setSummer,
   removeSubject,
   termsWithSubjects,
   togglePrerequisite,
@@ -103,3 +106,28 @@ describe('saved data', () => {
     expect(fromStored({ student: demoStudent, isDemo: false, setupDone: true, curriculum: { program: {}, subjects: [] } })).toBeNull()
   })
 })
+
+describe('summer classes', () => {
+  test('turning summers on adds a Summer term to each year; subjects can also run in the summer', () => {
+    let c = setSummer(twoSubjects(), true)
+    expect(hasSummer(c)).toBe(true)
+    expect(termsWithSubjects(c).map((t) => t.term)).toEqual([Y1S1, Y1S2, { year: 1, sem: 3 }])
+    c = addSubject(c, { code: 'S', title: 'Summer only', units: 3, term: { year: 1, sem: 3 } })
+    c = updateSubject({ curriculum: c, student: freshStudent() }, 'A', { code: 'A', title: 'Alpha', units: 3, term: Y1S1, summer: true }).curriculum
+    expect(c.subjects.find((s) => s.code === 'A')?.summer).toBe(true)
+    expect(curriculumProblem(c)).toBeNull()
+    // Kept when stored
+    expect(cleanCurriculum(c)).toMatchObject({ program: { summer: true } })
+    expect(cleanCurriculum(c).subjects.find((s) => s.code === 'A')?.summer).toBe(true)
+  })
+
+  test('turning summers off clears "also in summer"; schools without summers are unchanged', () => {
+    const on = updateSubject({ curriculum: setSummer(twoSubjects(), true), student: freshStudent() }, 'A', { code: 'A', title: 'Alpha', units: 3, term: Y1S1, summer: true }).curriculum
+    const off = setSummer(on, false)
+    expect(hasSummer(off)).toBe(false)
+    expect(off.subjects.some((s) => 'summer' in s)).toBe(false)
+    expect(termsWithSubjects(jdCurriculum)).toHaveLength(8)
+    expect(curriculumProblem({ program: { name: 'x' }, subjects: [{ code: 'A', title: 'A', units: 3, standard_year: 1, offered_sem: 4, prerequisites: [] }] })).toMatch(/invalid semester/)
+  })
+})
+

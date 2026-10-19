@@ -1134,7 +1134,9 @@ button.google {
   margin: 0;
 }
 
-.sign-in-screen {
+.sign-in-screen,
+.welcome,
+.consent-prompt {
   max-width: 28rem;
   margin: 0 auto;
 }
@@ -1143,20 +1145,20 @@ button.google {
   margin-bottom: 0.25rem;
 }
 
-.sign-in-screen .brand {
+.brand {
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
 }
 
-.sign-in-screen .tagline {
+.tagline {
   margin: 0 0 0.35rem;
   font-size: 1.15rem;
   font-weight: 600;
   line-height: 1.35;
 }
 
-.sign-in-screen .byline {
+.byline {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
@@ -1212,5 +1214,103 @@ button.google {
 }
 
 .privacy-text p {
+  margin: 0;
+}
+
+/* Summer */
+
+.summer-toggle,
+.also-summer {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.summer-toggle > span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.summer-toggle input,
+.also-summer input {
+  width: 1.25rem !important;
+  height: 1.25rem;
+  min-height: 0;
+  padding: 0;
+  margin: 0.15rem 0 0;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+.also-summer {
+  font-size: 0.875rem;
+  margin: 0.25rem 0;
+}
+
+.summer-tag {
+  margin-left: 0.4rem;
+  font-size: 0.7rem;
+}
+
+.summer-cap {
+  margin-top: 0.75rem;
+}
+
+/* Welcome and How to use */
+
+.welcome h2,
+.how-to-page h2 {
+  margin: 1.25rem 0 0.4rem;
+}
+
+.welcome .brand + h2 {
+  margin-top: 0;
+}
+
+.intro-text {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.how-to {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.7rem;
+  line-height: 1.5;
+}
+
+.how-to-example {
+  margin: 0.4rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--accent);
+  background: var(--info-bg);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.welcome-actions {
+  margin-top: 1.25rem;
+  align-items: center;
+}
+
+.welcome-actions .primary {
+  flex: 1;
+}
+
+.start-here {
+  border-color: var(--accent);
+}
+
+.start-here p {
+  margin: 0.25rem 0 0;
+}
+
+.consent-prompt .card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.consent-prompt p {
   margin: 0;
 }

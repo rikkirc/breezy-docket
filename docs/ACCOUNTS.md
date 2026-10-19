@@ -55,6 +55,10 @@ notice and agree…". The date they agreed is saved in their plan document as `c
 kept on every later save. Signing in to an existing account with email doesn't ask again. Students can delete
 everything with **Delete my account**.
 
+Accounts made before the notice have no `consentedAt`: once signed in, they see "Please review the Privacy notice"
+with **I agree** (saves the date) or **Sign out**, and can't use the app until they choose. Settings → Account
+shows the date agreed.
+
 **When `firestore.rules` changes, publish it again** (Firestore Database → Rules → paste → Publish). The app
 version that saves `consentedAt` needs the rules that allow it; with the old rules, saves are refused.
 

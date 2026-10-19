@@ -5,7 +5,7 @@ import type { Account } from '../cloud/useAccount'
 import { jdCurriculum } from '../data'
 import { backupFileName, makeBackup, parseBackup } from '../lib/backup'
 import { isInstalled, useInstallPrompt } from '../lib/useInstallPrompt'
-import { emptyCurriculum } from '../lib/curriculum'
+import { emptyCurriculum, hasSummer } from '../lib/curriculum'
 import { demoSaved, type Saved } from '../lib/storage'
 import { freshStudent, termAfterResults } from '../lib/student'
 import { parseTermKey, termIndex, termLabel, type Curriculum, type StudentData } from '../planner'
@@ -13,6 +13,7 @@ import { parseTermKey, termIndex, termLabel, type Curriculum, type StudentData }
 interface Props {
   account: Account
   onPrivacy: () => void
+  onHowTo: () => void
   student: StudentData
   isDemo: boolean
   onChange: (student: StudentData) => void
@@ -21,7 +22,7 @@ interface Props {
   onReplace: (saved: Saved, show?: 'working') => void
 }
 
-export function SettingsView({ account, onPrivacy, curriculum, student, isDemo, onChange, onReplace }: Props) {
+export function SettingsView({ account, onPrivacy, onHowTo, curriculum, student, isDemo, onChange, onReplace }: Props) {
   // Caps for semesters already taken no longer affect the plan, so only future ones are listed.
   const overrides = Object.entries(student.unit_caps.by_term ?? {}).filter(([key]) => {
     const term = parseTermKey(key)
@@ -60,6 +61,11 @@ export function SettingsView({ account, onPrivacy, curriculum, student, isDemo, 
   return (
     <section aria-labelledby="settings-heading">
       <h2 id="settings-heading">Settings</h2>
+      <p className="small-text">
+        <button type="button" className="link" onClick={onHowTo}>
+          How to use Breezy Docket
+        </button>
+      </p>
       <AccountPanel account={account} onPrivacy={onPrivacy} />
 
       <div className="card form">
@@ -88,6 +94,7 @@ export function SettingsView({ account, onPrivacy, curriculum, student, isDemo, 
             >
               <option value={1}>1st sem</option>
               <option value={2}>2nd sem</option>
+              {hasSummer(curriculum) && <option value={3}>Summer</option>}
             </select>
           </span>
           <span className="muted small-text">
@@ -97,7 +104,9 @@ export function SettingsView({ account, onPrivacy, curriculum, student, isDemo, 
         </label>
 
         <CapChoice curriculum={curriculum} student={student} onChange={onChange} />
-        <p className="muted small-text">Change a single semester with the − / + on the Plan.</p>
+        <p className="muted small-text">
+          A semester over its cap turns red on Working Subjects, where you can fit it or allow more units.
+        </p>
 
         {student.unit_caps.full_load && overrides.length > 0 && (
           <div>
