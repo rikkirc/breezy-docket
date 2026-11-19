@@ -72,7 +72,7 @@ The contact address at the end of the notice is `PRIVACY_CONTACT` in `src/compon
 
 The **Firestore rules** workflow (`.github/workflows/firestore-rules.yml`) runs on every merge to `main` that changes
 `firestore.rules`, and from the Actions tab (**Run workflow**). It runs the rules tests on the Firebase emulators
-first; only if they pass does it publish the file with `scripts/deploy-rules.mjs`, the same as Publish in the
+first (or confirms they already passed on the pull request with exactly the same files); only if they pass does it publish the file with `scripts/deploy-rules.mjs`, the same as Publish in the
 console. It uses only the Firebase Rules API, so its key can change rules and nothing else: it can't read or
 change anyone's data.
 
@@ -106,4 +106,4 @@ update the secret (step 5).
 
 - `npm test` covers the sign-in flow in the app with a stand-in for Firebase (`src/Account.test.tsx`).
 - `npm run test:firebase` runs the real account code and the security rules against the Firebase emulators
-  (needs Java; CI runs it on every push).
+  (needs Java; CI runs it on every pull request to `main`).

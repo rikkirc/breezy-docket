@@ -1,43 +1,96 @@
-# Runs the tests (Vitest), the type check, lint, a production build, and the Firebase rules tests on the emulators
+# Runs lint, the type check, the tests (Vitest), a production build, and the Firebase rules tests on the emulators.
+#
+# Runs on pull requests to main (and on demand), not on every push: a branch with no pull request uses no minutes.
+# It is one job, so packages are installed once. When a pull request changes only docs (*.md, docs/, images outside
+# src/), the job still runs and reports success after a few seconds instead of being skipped with paths-ignore:
+# a skipped workflow leaves a required status check "Expected — waiting" forever and blocks the merge.
+#
+# The Deploy and Firestore rules workflows skip their own test runs when this job passed on the exact files being
+# merged (scripts/ci-tested-on-pr.sh). They look for the step names below, so rename them there too.
 name: Tests
 
-# Runs on every push and pull request, on any branch, and on demand
 on:
   workflow_dispatch:
-  push:
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to the pull request cancels the run for the old commit
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
+    # Keep this name: it is the status check to require in the branch protection rule for main
+    name: Tests
     runs-on: ubuntu-latest
-    # A normal run takes under a minute; never let a stuck test hold a runner for long
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
-
-  firebase:
-    # The account code and the Firestore security rules, against the Firebase emulators (no real project)
-    runs-on: ubuntu-latest
+    # A normal run takes about a minute; never let a stuck test hold a runner for long
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+        with:
+          # The pull request's merge commit and its first parent (main), to see which files changed
+          fetch-depth: 2
+
+      - name: Check for code changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" != pull_request ]; then
+            echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          code=false
+          while IFS= read -r file; do
+            case "$file" in
+              src/*) code=true ;;  # an image imported by the app can break the build
+              *.md|docs/*|*.png|*.jpg|*.jpeg|*.gif|*.svg|*.webp|*.ico|*.avif) ;;
+              *) code=true ;;
+            esac
+            [ "$code" = true ] && echo "Code change: $file" && break
+          done < <(git diff --name-only HEAD^1 HEAD)
+          [ "$code" = false ] && echo "::notice::Only docs or images changed; skipping the tests."
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+      - if: steps.changes.outputs.code == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       # The Firestore emulator runs on Java
-      - uses: actions/setup-java@v4
+      - if: steps.changes.outputs.code == 'true'
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-      - run: npm ci
-      - run: npm run test:firebase
+      # firebase-tools (installed by npx) and the emulator downloads, kept between runs
+      - if: steps.changes.outputs.code == 'true'
+        id: firebase-tools
+        run: echo "version=$(npm view 'firebase-tools@14' version --json | jq -r 'if type == "array" then .[-1] else . end')" >> "$GITHUB_OUTPUT"
+      - if: steps.changes.outputs.code == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/firebase/emulators
+            ~/.npm/_npx
+          key: firebase-tools-${{ runner.os }}-${{ steps.firebase-tools.outputs.version }}
+
+      - if: steps.changes.outputs.code == 'true'
+        run: npm ci
+      - name: Lint
+        if: steps.changes.outputs.code == 'true'
+        run: npm run lint
+      - name: Type check
+        if: steps.changes.outputs.code == 'true'
+        run: npm run typecheck
+      - name: Unit tests
+        if: steps.changes.outputs.code == 'true'
+        run: npm test
+      - name: Build
+        if: steps.changes.outputs.code == 'true'
+        run: npm run build
+      # The account code and the Firestore security rules, against the Firebase emulators (no real project)
+      - name: Firebase rules tests
+        if: steps.changes.outputs.code == 'true'
+        run: npm run test:firebase

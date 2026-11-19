@@ -1,5 +1,9 @@
 # Publishes firestore.rules to the Firebase project when a merge to main changes them, after the rules tests pass
 # on the Firebase emulators. Needs the FIREBASE_RULES_DEPLOY_KEY secret (docs/ACCOUNTS.md).
+#
+# The rules tests run here unless the Tests workflow already passed them on the pull request with exactly the files
+# being merged (scripts/ci-tested-on-pr.sh). A manual run always runs them. Tests and publish stay separate jobs so
+# the deploy key is never on the runner that downloads and runs firebase-tools.
 name: Firestore rules
 
 on:
@@ -12,9 +16,9 @@ on:
 permissions:
   contents: read
 
-# One publish at a time, in merge order
+# One publish at a time, in merge order; a publish that has started is never cancelled
 concurrency:
-  group: firestore-rules
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 env:
@@ -22,21 +26,47 @@ env:
 
 jobs:
   test:
-    # The same rules tests as the Tests workflow, so a broken rule is never published
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      # To find the pull request's Tests run
+      actions: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check whether the pull request already passed the rules tests
+        id: pr
+        run: scripts/ci-tested-on-pr.sh "Firebase rules tests"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+      # The same rules tests as the Tests workflow, so a broken rule is never published
+      - if: steps.pr.outputs.tested != 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-java@v4
+      - if: steps.pr.outputs.tested != 'true'
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
-      - run: npm ci
-      - run: npm run test:firebase
+      - if: steps.pr.outputs.tested != 'true'
+        id: firebase-tools
+        run: echo "version=$(npm view 'firebase-tools@14' version --json | jq -r 'if type == "array" then .[-1] else . end')" >> "$GITHUB_OUTPUT"
+      - if: steps.pr.outputs.tested != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/firebase/emulators
+            ~/.npm/_npx
+          key: firebase-tools-${{ runner.os }}-${{ steps.firebase-tools.outputs.version }}
+      - if: steps.pr.outputs.tested != 'true'
+        run: npm ci
+      - name: Firebase rules tests
+        if: steps.pr.outputs.tested != 'true'
+        run: npm run test:firebase
 
   deploy:
     needs: test

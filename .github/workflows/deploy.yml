@@ -1,20 +1,30 @@
 # Publishes the app to GitHub Pages on every merge to main: https://rikkirc.github.io/breezy-docket/
 # (Settings → Pages → Source must be "GitHub Actions".)
+#
+# Never publishes untested code: the tests run here unless the Tests workflow already passed on the pull request with
+# exactly the files being merged (scripts/ci-tested-on-pr.sh). A manual run always runs them.
 name: Deploy
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
+    # Docs aren't part of the site, so a docs-only merge doesn't redeploy it (images are: they're the app icons)
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  # To find the pull request's Tests run
+  actions: read
+  pull-requests: read
 
-# One deploy at a time; a newer merge waits instead of cancelling a deploy halfway
+# One deploy at a time, and a deploy that has started is never cancelled; a newer merge waits for it
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -23,13 +33,24 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Check whether the pull request already passed the tests
+        id: pr
+        run: scripts/ci-tested-on-pr.sh Lint "Type check" "Unit tests" Build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
       # Never publish a build whose tests fail
-      - run: npm test
+      - name: Lint, type check and unit tests (not already passed on the pull request)
+        if: steps.pr.outputs.tested != 'true'
+        run: |
+          npm run lint
+          npm run typecheck
+          npm test
       - run: npm run build
         env:
           # The site lives at https://<owner>.github.io/<repository>/, or at the root for a repository
@@ -43,6 +64,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
