@@ -28,4 +28,4 @@ npm run dev       # the app at http://localhost:5173
 - `src/components/` — the setup steps (Subjects, Prerequisites, Review) and the Working Subjects, Curriculum and Settings screens.
 - `src/lib/` — edits on the curriculum and the student's data, backup export/import, saving to localStorage.
 - `public/` — the app manifest, icons and the offline service worker (`sw.js`).
-- `.github/workflows/` — `tests.yml` (every push) and `deploy.yml` (GitHub Pages on merge to `main`).
+- `.github/workflows/` — `tests.yml` (pull requests to `main`), `deploy.yml` (GitHub Pages on merge to `main`) and `firestore-rules.yml` (publishes `firestore.rules` on merge). `scripts/ci-tested-on-pr.sh` lets the merge workflows skip tests the pull request already passed.
